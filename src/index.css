@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Kantumruy+Pro:ital,wght@0,100..900;1,100..900&family=Hanuman:wght@100;300;400;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-navy-dark text-slate-light font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4 {
+    @apply font-outfit text-white;
+  }
+}
+
+/* Print-specific layout rules to export the label clean and header-free */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .label-print-container, .label-print-container * {
+    visibility: visible;
+  }
+  
+  .label-print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(23, 42, 69, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
