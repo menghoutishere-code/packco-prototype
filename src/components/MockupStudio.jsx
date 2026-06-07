@@ -9,11 +9,11 @@ const MOCKUP_DATA = [
     name: '🍊 Pouch - Front & Back (Studio)',
     packageType: 'pouch',
     imgUrl: '/mockup/pouch-front-back-blank.jpg',
-    width: 1200,
-    height: 1200,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 180, y: 350}, {x: 430, y: 350}, {x: 420, y: 820}, {x: 190, y: 820}],
-      [{x: 770, y: 350}, {x: 1010, y: 350}, {x: 1000, y: 820}, {x: 780, y: 820}]
+      [{x: 275, y: 230}, {x: 495, y: 230}, {x: 490, y: 410}, {x: 280, y: 410}],
+      [{x: 605, y: 230}, {x: 815, y: 230}, {x: 810, y: 620}, {x: 610, y: 620}]
     ]
   },
   {
@@ -21,10 +21,10 @@ const MOCKUP_DATA = [
     name: '🍊 Pouch - 3D Angle (Studio)',
     packageType: 'pouch',
     imgUrl: '/mockup/pouch-isometric-blank.jpg',
-    width: 1000,
-    height: 1000,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 355, y: 370}, {x: 645, y: 395}, {x: 630, y: 830}, {x: 340, y: 805}]
+      [{x: 360, y: 370}, {x: 590, y: 190}, {x: 710, y: 320}, {x: 480, y: 500}]
     ]
   },
   {
@@ -32,10 +32,10 @@ const MOCKUP_DATA = [
     name: '🍊 Pouch - Table (Lifestyle)',
     packageType: 'pouch',
     imgUrl: '/mockup/pouch-lifestyle-blank.jpg',
-    width: 1200,
-    height: 900,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 475, y: 280}, {x: 745, y: 300}, {x: 725, y: 720}, {x: 455, y: 690}]
+      [{x: 430, y: 290}, {x: 660, y: 290}, {x: 660, y: 430}, {x: 430, y: 430}]
     ]
   },
   {
@@ -43,10 +43,10 @@ const MOCKUP_DATA = [
     name: '🫙 Glass Jar - Front (Studio)',
     packageType: 'jar',
     imgUrl: '/mockup/jar-front-blank.jpg',
-    width: 1000,
-    height: 1000,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 315, y: 380}, {x: 685, y: 380}, {x: 685, y: 780}, {x: 315, y: 780}]
+      [{x: 440, y: 290}, {x: 660, y: 290}, {x: 660, y: 610}, {x: 440, y: 610}]
     ]
   },
   {
@@ -54,10 +54,10 @@ const MOCKUP_DATA = [
     name: '🫙 Glass Jar - Counter (Lifestyle)',
     packageType: 'jar',
     imgUrl: '/mockup/jar-lifestyle-blank.jpg',
-    width: 1200,
-    height: 900,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 520, y: 290}, {x: 800, y: 300}, {x: 790, y: 660}, {x: 510, y: 640}]
+      [{x: 440, y: 290}, {x: 660, y: 290}, {x: 660, y: 610}, {x: 440, y: 610}]
     ]
   },
   {
@@ -65,10 +65,10 @@ const MOCKUP_DATA = [
     name: '📦 Carton Box - 3D Angle (Studio)',
     packageType: 'box',
     imgUrl: '/mockup/box-isometric-blank.jpg',
-    width: 1000,
-    height: 1000,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 500, y: 440}, {x: 840, y: 370}, {x: 840, y: 730}, {x: 500, y: 820}]
+      [{x: 310, y: 220}, {x: 660, y: 185}, {x: 660, y: 600}, {x: 310, y: 560}]
     ]
   },
   {
@@ -76,10 +76,10 @@ const MOCKUP_DATA = [
     name: '📦 Carton Box - Kitchen (Lifestyle)',
     packageType: 'box',
     imgUrl: '/mockup/box-lifestyle-blank.jpg',
-    width: 1200,
-    height: 900,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 445, y: 360}, {x: 735, y: 305}, {x: 725, y: 670}, {x: 435, y: 740}]
+      [{x: 575, y: 365}, {x: 775, y: 365}, {x: 775, y: 615}, {x: 575, y: 615}]
     ]
   },
   {
@@ -87,10 +87,10 @@ const MOCKUP_DATA = [
     name: '🥫 Canister Tube - Front (Studio)',
     packageType: 'tube',
     imgUrl: '/mockup/tube-front-blank.jpg',
-    width: 1000,
-    height: 1000,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 320, y: 320}, {x: 680, y: 320}, {x: 680, y: 800}, {x: 320, y: 800}]
+      [{x: 450, y: 230}, {x: 650, y: 230}, {x: 650, y: 640}, {x: 450, y: 640}]
     ]
   },
   {
@@ -98,10 +98,10 @@ const MOCKUP_DATA = [
     name: '🍧 Food Tub - Front (Studio)',
     packageType: 'tub',
     imgUrl: '/mockup/tub-front-blank.jpg',
-    width: 1000,
-    height: 1000,
+    width: 1408,
+    height: 768,
     quads: [
-      [{x: 275, y: 380}, {x: 725, y: 380}, {x: 680, y: 750}, {x: 320, y: 750}]
+      [{x: 320, y: 265}, {x: 780, y: 265}, {x: 750, y: 635}, {x: 350, y: 635}]
     ]
   }
 ];
