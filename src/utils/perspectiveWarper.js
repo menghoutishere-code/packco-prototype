@@ -74,17 +74,12 @@ function drawTriangle(ctx, img, sx0, sy0, sx1, sy1, sx2, sy2, dx0, dy0, dx1, dy1
     ctx.restore();
     return;
   }
-
   const a = (dx0 * (sy1 - sy2) - sy0 * (dx1 - dx2) + dx1 * sy2 - dx2 * sy1) / den;
-  const c = (sx0 * (dx1 - dx2) - dx0 * (sx1 - sx2) + sx2 * dx1 - sx1 * dx2) / den;
-  const e = (sx0 * (sy1 * dx0 - sy0 * dx1) + dx0 * (sx1 * sy0 - sx0 * sy1) + sx0 * (sy0 * dx2 - sy2 * dx0)) / den; // simplified offset helper
-  // Wait, let's verify direct linear equation coefficients:
-  // dx = a * sx + c * sy + e
-  // We can solve it directly for e:
+  const c = (sx0 * (dx1 - dx2) - dx0 * (sx1 - sx2) + sx1 * dx2 - sx2 * dx1) / den;
   const e_direct = dx0 - a * sx0 - c * sy0;
 
   const b = (dy0 * (sy1 - sy2) - sy0 * (dy1 - dy2) + dy1 * sy2 - dy2 * sy1) / den;
-  const d = (sx0 * (dy1 - dy2) - dy0 * (sx1 - sx2) + sx2 * dy1 - sx1 * dy2) / den;
+  const d = (sx0 * (dy1 - dy2) - dy0 * (sx1 - sx2) + sx1 * dy2 - sx2 * dy1) / den;
   const f_direct = dy0 - b * sx0 - d * sy0;
 
   ctx.transform(a, b, c, d, e_direct, f_direct);

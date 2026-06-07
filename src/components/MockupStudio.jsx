@@ -106,7 +106,7 @@ const MOCKUP_DATA = [
   }
 ];
 
-export default function MockupStudio({ labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoUrl }) {
+export default function MockupStudio({ labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoSvg, customLogoUrl }) {
   const [selectedMockup, setSelectedMockup] = useState(MOCKUP_DATA[0]);
   const [compositeDataUrl, setCompositeDataUrl] = useState(null);
   const [isWarping, setIsWarping] = useState(false);
@@ -117,7 +117,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
 
   useEffect(() => {
     generateCompositeMockup();
-  }, [selectedMockup, labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoUrl]);
+  }, [selectedMockup, labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoSvg, customLogoUrl]);
 
   const generateCompositeMockup = async () => {
     setIsWarping(true);
@@ -146,6 +146,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
         expiry, 
         barcodeText, 
         activeTemplate, 
+        customLogoSvg,
         customLogoUrl
       );
 
@@ -256,7 +257,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
               </>
             ) : (
               <>
-                <Sparkles size={14} className="text-amber-500" /> Bake Shadows & Textures (Imagen 4)
+                <Sparkles size={14} className="text-amber-500" /> Bake Shadows & Textures (Nano Banana)
               </>
             )}
           </button>

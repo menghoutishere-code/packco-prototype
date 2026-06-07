@@ -11,13 +11,23 @@
  * @param {string} templateType - 'pouch', 'kraft', or 'panel'.
  * @param {string|null} logoImgUrl - Image URL of the selected asset logo (if any).
  */
-export async function drawLabel2D(canvas, labelData, productName, weight, expiry, barcodeText, templateType, logoImgUrl) {
+export async function drawLabel2D(canvas, labelData, productName, weight, expiry, barcodeText, templateType, customLogoSvg, customLogoUrl) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width;
   const h = canvas.height;
 
   // Clear canvas
   ctx.clearRect(0, 0, w, h);
+
+  // Resolve logo source (vector SVG converted to base64 DataURL, or image URL)
+  let logoImgUrl = customLogoUrl;
+  if (!logoImgUrl && customLogoSvg) {
+    try {
+      logoImgUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(customLogoSvg)));
+    } catch (e) {
+      console.error('Failed to convert SVG to data URL', e);
+    }
+  }
 
   // Set colors and font families
   const primaryKhmerFont = "'Noto Sans Khmer', 'Kantumruy Pro', sans-serif";

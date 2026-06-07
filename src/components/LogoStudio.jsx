@@ -353,7 +353,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
         <div className="text-center max-w-sm mt-2">
           <p className="text-xs font-semibold text-slate-400">
             {selectedAssetLogo 
-              ? 'This high-res organic asset was pre-rendered using Imagen 4. It will wrap directly onto your mockups and compile into labels.'
+              ? 'This high-res organic asset was pre-rendered using Nano Banana. It will wrap directly onto your mockups and compile into labels.'
               : 'This is a fully customizable vector asset. Modifying brand text, year, or colors above updates the SVG layout in real time.'
             }
           </p>

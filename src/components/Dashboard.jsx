@@ -624,7 +624,8 @@ export default function Dashboard({ onLogout }) {
             expiry={expiry} 
             barcodeText={barcodeText} 
             activeTemplate={activeTemplate} 
-            customLogoUrl={customLogoUrl || customLogoSvg}
+            customLogoSvg={customLogoSvg}
+            customLogoUrl={customLogoUrl}
           />
         )}
       </div>
