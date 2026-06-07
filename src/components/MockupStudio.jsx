@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileDown, RefreshCw, Layers, Check, Sparkles } from 'lucide-react';
-import { warpImage } from '../utils/perspectiveWarper';
 import { drawLabel2D } from '../utils/labelCanvasRenderer';
+import { drawFrontPanel, themeForTemplate } from '../utils/frontPanelRenderer';
 
 const MOCKUP_DATA = [
   {
@@ -108,23 +108,20 @@ const MOCKUP_DATA = [
 
 export default function MockupStudio({ labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoSvg, customLogoUrl }) {
   const [selectedMockup, setSelectedMockup] = useState(MOCKUP_DATA[0]);
-  const [compositeDataUrl, setCompositeDataUrl] = useState(null);
-  const [isWarping, setIsWarping] = useState(false);
+  const [designPreviewUrl, setDesignPreviewUrl] = useState(null);
   const [refinementSuccess, setRefinementSuccess] = useState(false);
-  const [mockupPrompt, setMockupPrompt] = useState('project label onto front of package, blending colors and lighting naturally');
+  const [mockupPrompt, setMockupPrompt] = useState('');
   const [resultImage, setResultImage] = useState(null);
   const [usingFallbackHero, setUsingFallbackHero] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
-  const canvasRef = useRef(null);
-
   useEffect(() => {
-    // Clear AI result when switching mockups or templates to force refresh/local preview
+    // Clear any prior AI result when inputs change, and refresh the flat design preview.
     setResultImage(null);
     setUsingFallbackHero(false);
     setRefinementSuccess(false);
-    generateCompositeMockup();
-  }, [selectedMockup, labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoSvg, customLogoUrl]);
+    refreshDesignPreview();
+  }, [selectedMockup, labelData, productName, weight, activeTemplate, customLogoSvg, customLogoUrl]);
 
   // Renders the 2D label onto a fresh in-memory scratch canvas using the same
   // drawLabel2D call (and props) used by the local composite preview.
@@ -149,38 +146,27 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
     return scratchCanvas;
   };
 
-  const generateCompositeMockup = async () => {
-    setIsWarping(true);
+  // Renders the clean front-of-pack design (the wrap input) to a fresh canvas.
+  const renderFrontPanelCanvas = async () => {
+    const canvas = document.createElement('canvas');
+    await drawFrontPanel(canvas, {
+      productName,
+      productNameKh: labelData?.productNameKh,
+      weight,
+      theme: themeForTemplate(activeTemplate),
+      logoSvg: customLogoSvg,
+      logoUrl: customLogoUrl,
+    });
+    return canvas;
+  };
+
+  // Builds the flat front-of-pack design preview shown beside the blank package.
+  const refreshDesignPreview = async () => {
     try {
-      const mockupImg = await loadImage(selectedMockup.imgUrl);
-      
-      // Initialize main compositing canvas
-      const canvas = canvasRef.current;
-      canvas.width = selectedMockup.width;
-      canvas.height = selectedMockup.height;
-      const ctx = canvas.getContext('2d');
-
-      // 1. Draw blank mockup background
-      ctx.drawImage(mockupImg, 0, 0, selectedMockup.width, selectedMockup.height);
-
-      // 2. Generate high-res 2D label on hidden scratch canvas
-      const scratchCanvas = await renderLabelScratchCanvas();
-
-      // 3. Apply perspective warp for each quadrilateral mapping in the selected mockup template
-      selectedMockup.quads.forEach(quad => {
-        ctx.save();
-        // Blend mode Multiply composites the shadows/textures of the underlying pack onto the label!
-        ctx.globalCompositeOperation = 'multiply';
-        warpImage(ctx, scratchCanvas, quad, 20, 20); // 20x20 grid resolution for hyper-smooth warp
-        ctx.restore();
-      });
-
-      // Export canvas state as DataURL for high performance image tag rendering
-      setCompositeDataUrl(canvas.toDataURL('image/jpeg', 0.92));
+      const canvas = await renderFrontPanelCanvas();
+      setDesignPreviewUrl(canvas.toDataURL('image/png'));
     } catch (err) {
-      console.error('Failed to composite 3D mockup', err);
-    } finally {
-      setIsWarping(false);
+      console.error('Failed to render front-of-pack preview', err);
     }
   };
 
@@ -189,16 +175,16 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
     setRefinementSuccess(false);
     setUsingFallbackHero(false);
     try {
-      // Render the label to a fresh scratch canvas and extract a print-ready PNG
-      const scratchCanvas = await renderLabelScratchCanvas();
-      const labelPng = scratchCanvas.toDataURL('image/png').split(',')[1];
+      // The wrap input is the clean front-of-pack design, not the dense compliance label.
+      const designCanvas = await renderFrontPanelCanvas();
+      const designPng = designCanvas.toDataURL('image/png').split(',')[1];
 
       const response = await fetch('/api/mockup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mockupId: selectedMockup.id,
-          labelPng,
+          designPng,
           userPrompt: mockupPrompt
         })
       });
@@ -241,23 +227,13 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
   };
 
   const handleDownloadMockup = () => {
-    // Marketing mockup: AI result if present, otherwise the local composite preview
+    // Marketing mockup: the AI result if present, otherwise the flat design.
     if (resultImage) {
       triggerDownload(resultImage, `${selectedMockup.id}-mockup.png`);
-    } else if (compositeDataUrl) {
-      triggerDownload(compositeDataUrl, `${selectedMockup.id}-mockup.png`);
+    } else if (designPreviewUrl) {
+      triggerDownload(designPreviewUrl, `${selectedMockup.id}-design.png`);
     }
   };
-
-  function loadImage(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = (e) => reject(e);
-      img.src = url;
-    });
-  }
 
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
@@ -303,10 +279,8 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
         {/* Integration Summary */}
         <div className="flex flex-col gap-2.5 border-t border-white/5 pt-3 text-[11px]">
           <div className="flex justify-between">
-            <span className="text-slate-400">Layout Mode:</span>
-            <span className="font-semibold text-slate-200">
-              {activeTemplate === 'panel' ? '2D Compliance Panel' : 'Premium 3-Column Wrap'}
-            </span>
+            <span className="text-slate-400">Wrap Input:</span>
+            <span className="font-semibold text-slate-200">Front-of-pack design</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">API Generator:</span>
@@ -322,14 +296,14 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
         <div className="flex flex-col gap-3 border-t border-white/5 pt-4">
           <button
             onClick={handleAiMockupGeneration}
-            disabled={isAiGenerating || isWarping}
+            disabled={isAiGenerating}
             className={`w-full py-2.5 rounded-xl font-bold bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 transition-all flex items-center justify-center gap-2 shadow ${
               isAiGenerating ? 'cursor-wait' : ''
             }`}
           >
             {isAiGenerating ? (
               <>
-                <RefreshCw size={14} className="animate-spin" /> AI Aligning Label...
+                <RefreshCw size={14} className="animate-spin" /> Wrapping design onto package...
               </>
             ) : (
               <>
@@ -340,7 +314,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
 
           <button
             onClick={handleDownloadMockup}
-            disabled={isWarping || isAiGenerating}
+            disabled={isAiGenerating}
             className="w-full py-3 rounded-xl font-bold bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
           >
             <FileDown size={16} /> Download Marketing Mockup
@@ -348,7 +322,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
 
           <button
             onClick={handleDownloadLabel}
-            disabled={isWarping || isAiGenerating}
+            disabled={isAiGenerating}
             className="w-full py-2.5 rounded-xl font-bold bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 transition-all flex items-center justify-center gap-2"
           >
             <FileDown size={14} /> Download Print-Ready Label
@@ -362,30 +336,20 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
           3D Packaging Render
         </div>
 
-        {/* Hidden Canvas used for programmatical texture synthesis */}
-        <canvas ref={canvasRef} className="hidden" />
-
         {isAiGenerating ? (
           <div className="flex flex-col items-center gap-3 text-slate-400">
             <RefreshCw className="animate-spin" size={24} />
-            <span className="text-xs font-semibold">Generating AI marketing mockup...</span>
-          </div>
-        ) : isWarping ? (
-          <div className="flex flex-col items-center gap-3 animate-pulse text-slate-400">
-            <RefreshCw className="animate-spin" size={24} />
-            <span className="text-xs font-semibold">Projecting 2D label coordinates onto 3D Mesh...</span>
+            <span className="text-xs font-semibold">Wrapping your design onto the package...</span>
           </div>
         ) : resultImage ? (
-          // Display the AI marketing mockup (hero). On error fall back to local composite.
+          // The AI marketing mockup (hero). On error fall back to the flat design.
           <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
             <div className="w-full max-w-[480px] aspect-[1408/768] rounded-xl border border-white/10 bg-white/5 shadow-2xl overflow-hidden flex items-center justify-center">
               <img
                 src={resultImage}
                 alt="AI Marketing Mockup"
                 className="max-w-full max-h-full object-contain"
-                onError={(e) => {
-                  if (compositeDataUrl) e.currentTarget.src = compositeDataUrl;
-                }}
+                onError={(e) => { if (designPreviewUrl) e.currentTarget.src = designPreviewUrl; }}
               />
             </div>
             {usingFallbackHero ? (
@@ -393,24 +357,30 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
                 Showing pre-rendered sample (live generation unavailable)
               </span>
             ) : (
-              <span className="px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold uppercase flex items-center gap-1 animate-bounce">
+              <span className="px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold uppercase flex items-center gap-1">
                 <Check size={12} /> AI Marketing Mockup Generated
               </span>
             )}
           </div>
         ) : (
-          // Instant local preview from the client perspective warp
-          compositeDataUrl && (
-            <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
-              <div className="w-full max-w-[480px] aspect-[1408/768] rounded-xl border border-white/10 bg-white/5 shadow-2xl overflow-hidden flex items-center justify-center">
-                <img
-                  src={compositeDataUrl}
-                  alt="Local Composited Mockup"
-                  className="max-w-full max-h-full object-contain"
-                />
+          // Pre-generation: the clean blank package + the flat front-of-pack design.
+          <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+            <div className="flex items-center justify-center gap-4 w-full">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="w-[300px] aspect-[1408/768] rounded-xl border border-white/10 bg-white/5 overflow-hidden flex items-center justify-center">
+                  <img src={selectedMockup.imgUrl} alt="Blank package" className="max-w-full max-h-full object-contain" />
+                </div>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest">Blank package</span>
+              </div>
+              <div className="text-slate-500 text-2xl font-light">+</div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="w-[140px] aspect-[4/5] rounded-xl border border-white/10 bg-white overflow-hidden flex items-center justify-center">
+                  {designPreviewUrl && <img src={designPreviewUrl} alt="Front-of-pack design" className="max-w-full max-h-full object-contain" />}
+                </div>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest">Your design</span>
               </div>
             </div>
-          )
+          </div>
         )}
 
         <div className="text-center max-w-md mt-2">
@@ -418,8 +388,8 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
             {resultImage
               ? (usingFallbackHero
                   ? 'Showing a pre-rendered sample mockup. Live AI generation was unavailable for this run.'
-                  : 'Showing the AI marketing mockup. Gemini wrapped the label onto the container surface.')
-              : 'Showing the instant local perspective preview. Click "Generate AI Mockup" above to run the real image-to-image wrap.'
+                  : 'Gemini wrapped your front-of-pack design onto the packaging, matching lighting and perspective.')
+              : 'Click "Generate AI Mockup" to wrap your front-of-pack design onto the selected package.'
             }
           </p>
         </div>

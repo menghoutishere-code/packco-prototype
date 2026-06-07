@@ -4,6 +4,8 @@ import { LogOut, RefreshCw, FileDown, AlertTriangle, Layers, Check, Globe, Layou
 import LabelTemplatePouch from './labels/LabelTemplatePouch';
 import LabelTemplateKraft from './labels/LabelTemplateKraft';
 import LabelTemplatePanel from './labels/LabelTemplatePanel';
+import LabelTemplateModern from './labels/LabelTemplateModern';
+import LabelTemplateVibrant from './labels/LabelTemplateVibrant';
 import LogoStudio from './LogoStudio';
 import MockupStudio from './MockupStudio';
 
@@ -14,7 +16,7 @@ export default function Dashboard({ onLogout }) {
   const [expiry, setExpiry] = useState('6 months');
   const [barcodeText, setBarcodeText] = useState('8841234567890');
   const [inputLanguage, setInputLanguage] = useState('en'); // 'en' or 'km'
-  const [activeTemplate, setActiveTemplate] = useState('pouch'); // 'pouch', 'kraft', 'panel'
+  const [activeTemplate, setActiveTemplate] = useState('modern'); // modern, vibrant, pouch, kraft, panel
   const [isEconomicsOpen, setIsEconomicsOpen] = useState(true); // Open by default to show details
   const [isLiabilityChecked, setIsLiabilityChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -245,6 +247,10 @@ export default function Dashboard({ onLogout }) {
         return <LabelTemplateKraft {...props} />;
       case 'panel':
         return <LabelTemplatePanel {...props} />;
+      case 'modern':
+        return <LabelTemplateModern {...props} />;
+      case 'vibrant':
+        return <LabelTemplateVibrant {...props} />;
       case 'pouch':
       default:
         return <LabelTemplatePouch {...props} />;
@@ -569,30 +575,23 @@ export default function Dashboard({ onLogout }) {
             </div>
 
             {/* Template Selector Strip */}
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={() => setActiveTemplate('pouch')}
-                className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === 'pouch' ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
-              >
-                <div className="text-xs font-bold text-white">🍊 Pouch Label</div>
-                <div className="text-[10px] text-slate-400 mt-1">Accent band, bilingual table</div>
-              </button>
-
-              <button
-                onClick={() => setActiveTemplate('kraft')}
-                className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === 'kraft' ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
-              >
-                <div className="text-xs font-bold text-white">🌾 Premium Kraft</div>
-                <div className="text-[10px] text-slate-400 mt-1">Artisan minimal, warm tone</div>
-              </button>
-
-              <button
-                onClick={() => setActiveTemplate('panel')}
-                className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === 'panel' ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
-              >
-                <div className="text-xs font-bold text-white">📜 Back Panel</div>
-                <div className="text-[10px] text-slate-400 mt-1">Structured FDA layout</div>
-              </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[
+                { id: 'modern', name: '✨ Modern Minimal', desc: 'Editorial, clean whitespace' },
+                { id: 'vibrant', name: '🔥 Vibrant Market', desc: 'Bold gradient, nutrition pills' },
+                { id: 'pouch', name: '🍊 Pouch Label', desc: 'Accent band, bilingual table' },
+                { id: 'kraft', name: '🌾 Premium Kraft', desc: 'Artisan minimal, warm tone' },
+                { id: 'panel', name: '📜 Back Panel', desc: 'Structured FDA layout' },
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTemplate(t.id)}
+                  className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === t.id ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
+                >
+                  <div className="text-xs font-bold text-white">{t.name}</div>
+                  <div className="text-[10px] text-slate-400 mt-1">{t.desc}</div>
+                </button>
+              ))}
             </div>
 
             {/* Large Label Preview Area */}
