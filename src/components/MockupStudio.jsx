@@ -132,7 +132,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
       const ctx = canvas.getContext('2d');
 
       // 1. Draw blank mockup background
-      ctx.drawImage(mockupImg, 0, 0);
+      ctx.drawImage(mockupImg, 0, 0, selectedMockup.width, selectedMockup.height);
 
       // 2. Generate high-res 2D label on hidden scratch canvas
       const scratchCanvas = document.createElement('canvas');
