@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import JsBarcode from 'jsbarcode';
-import { LogOut, RefreshCw, FileDown, AlertTriangle, HelpCircle, Layers, CheckCircle2 } from 'lucide-react';
+import { LogOut, RefreshCw, FileDown, AlertTriangle, Layers, Check, Globe, Layout, Sparkles } from 'lucide-react';
+import LabelTemplatePouch from './labels/LabelTemplatePouch';
+import LabelTemplateKraft from './labels/LabelTemplateKraft';
+import LabelTemplatePanel from './labels/LabelTemplatePanel';
 
 export default function Dashboard({ onLogout }) {
   const [productName, setProductName] = useState('Dried Spicy Mango');
@@ -8,7 +11,10 @@ export default function Dashboard({ onLogout }) {
   const [weight, setWeight] = useState('100g');
   const [expiry, setExpiry] = useState('6 months');
   const [barcodeText, setBarcodeText] = useState('8841234567890');
-  
+  const [inputLanguage, setInputLanguage] = useState('en'); // 'en' or 'km'
+  const [activeTemplate, setActiveTemplate] = useState('pouch'); // 'pouch', 'kraft', 'panel'
+  const [isEconomicsOpen, setIsEconomicsOpen] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [labelData, setLabelData] = useState({
     productNameKh: 'ស្វាយសម្ងួតហឹរ',
@@ -31,35 +37,47 @@ export default function Dashboard({ onLogout }) {
 
   const barcodeRef = useRef(null);
 
-  // Render barcode whenever barcodeText changes
+  // Render barcode whenever barcodeText or activeTemplate changes
   useEffect(() => {
     if (barcodeRef.current && barcodeText) {
       try {
         JsBarcode(barcodeRef.current, barcodeText, {
           format: "EAN13",
-          width: 1.5,
-          height: 40,
+          width: 1.2,
+          height: 35,
           displayValue: true,
-          fontSize: 10,
-          margin: 0
+          fontSize: 9,
+          margin: 0,
+          background: "transparent"
         });
       } catch (err) {
-        // Fallback to CODE128 if not valid EAN13
         try {
           JsBarcode(barcodeRef.current, barcodeText, {
             format: "CODE128",
-            width: 1.5,
-            height: 40,
+            width: 1.2,
+            height: 35,
             displayValue: true,
-            fontSize: 10,
-            margin: 0
+            fontSize: 9,
+            margin: 0,
+            background: "transparent"
           });
         } catch (e) {
           console.error("Barcode rendering failed", e);
         }
       }
     }
-  }, [barcodeText, labelData]);
+  }, [barcodeText, labelData, activeTemplate]);
+
+  // Adjust placeholder suggestions based on input language
+  useEffect(() => {
+    if (inputLanguage === 'km') {
+      setProductName('ស្វាយសម្ងួតហឹរ');
+      setRawIngredients('ស្វាយទុំ ៨៥%, ស្ករស ១២%, ម្ទេស ៣%');
+    } else {
+      setProductName('Dried Spicy Mango');
+      setRawIngredients('Ripe Mango 85%, Sugar 12%, Chili 3%');
+    }
+  }, [inputLanguage]);
 
   const handleGenerate = async () => {
     setIsLoading(true);
@@ -67,7 +85,10 @@ export default function Dashboard({ onLogout }) {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawInput: `Product: ${productName}, Ingredients: ${rawIngredients}, Weight: ${weight}, Expiry: ${expiry}` })
+        body: JSON.stringify({ 
+          rawInput: `Product: ${productName}, Ingredients: ${rawIngredients}, Weight: ${weight}, Expiry: ${expiry}`,
+          inputLanguage 
+        })
       });
       
       if (response.ok) {
@@ -77,17 +98,19 @@ export default function Dashboard({ onLogout }) {
         throw new Error('API request failed');
       }
     } catch (err) {
-      // Fallback offline mock processing (for local testing/demos)
+      console.warn("API request failed, running offline mock fallback", err);
+      // Fallback offline mock processing
       setTimeout(() => {
-        const parsedIngs = rawIngredients.split(',').map(item => {
-          const parts = item.trim().split(/\s+(\d+)%/);
-          const name = parts[0];
-          const pct = parts[1] ? parseInt(parts[1]) : 10;
-          return { nameKh: translateMockIng(name), percentage: pct };
+        const parsedIngs = rawIngredients.split(/[,、|]/).map(item => {
+          const trimmed = item.trim();
+          const match = trimmed.match(/(.*?)\s*(\d+)\s*%/);
+          const name = match ? match[1] : trimmed;
+          const pct = match ? parseInt(match[2]) : 10;
+          return { nameKh: inputLanguage === 'km' ? name : translateMockIng(name), percentage: pct };
         });
 
         setLabelData({
-          productNameKh: translateMockName(productName),
+          productNameKh: inputLanguage === 'km' ? productName : translateMockName(productName),
           ingredients: parsedIngs,
           nutritionFacts: {
             servingSize: weight,
@@ -100,7 +123,7 @@ export default function Dashboard({ onLogout }) {
           allergensKh: checkMockAllergens(rawIngredients),
           mandatoryWarningsKh: ['រក្សាទុកក្នុងកន្លែងត្រជាក់និងស្ងួត']
         });
-      }, 1000);
+      }, 1200);
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +146,7 @@ export default function Dashboard({ onLogout }) {
     for (let k in dict) {
       if (key.includes(k)) return dict[k];
     }
-    return `គ្រឿងផ្សំ ${name}`;
+    return name;
   };
 
   const translateMockName = (name) => {
@@ -154,20 +177,40 @@ export default function Dashboard({ onLogout }) {
     window.print();
   };
 
+  const renderSelectedTemplate = () => {
+    const props = {
+      labelData,
+      productName,
+      weight,
+      expiry,
+      barcodeRef
+    };
+
+    switch (activeTemplate) {
+      case 'kraft':
+        return <LabelTemplateKraft {...props} />;
+      case 'panel':
+        return <LabelTemplatePanel {...props} />;
+      case 'pouch':
+      default:
+        return <LabelTemplatePouch {...props} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-navy-dark flex flex-col">
+    <div className="min-h-screen bg-navy-dark flex flex-col font-sans">
       {/* Header */}
       <header className="max-w-7xl mx-auto w-full px-6 py-4 flex justify-between items-center border-b border-white/5 no-print">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber to-amber-light flex items-center justify-center font-outfit text-white font-extrabold text-lg shadow-lg">P</div>
-          <span className="font-outfit text-lg font-bold text-white tracking-tight">PackCo<span className="text-amber">.ai</span></span>
-          <span className="px-2 py-0.5 rounded bg-amber/10 border border-amber/20 text-amber text-[10px] font-semibold uppercase">Workspace</span>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center font-outfit text-white font-extrabold text-lg shadow-lg">P</div>
+          <span className="font-outfit text-lg font-bold text-white tracking-tight">PackCo<span className="text-amber-500">.ai</span></span>
+          <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-semibold uppercase">Workspace</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs text-slate-light/60">Logged in as: <strong>admin</strong></span>
+          <span className="text-xs text-slate-400">Logged in as: <strong>admin</strong></span>
           <button 
             onClick={onLogout}
-            className="px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-semibold transition-all duration-200 border border-white/10 flex items-center gap-2"
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-semibold transition-all duration-200 border border-white/10 flex items-center gap-2"
           >
             <LogOut size={14} /> Log Out
           </button>
@@ -177,71 +220,104 @@ export default function Dashboard({ onLogout }) {
       {/* Main Layout */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 no-print">
         
-        {/* Left Column: Input Form (lg:col-span-4) */}
-        <section className="lg:col-span-4 flex flex-col gap-6">
-          <div className="glass p-6 rounded-2xl flex flex-col gap-5 text-left">
-            <h2 className="text-base font-bold text-white border-b border-white/5 pb-3">Label Parameters</h2>
+        {/* Left Column: Input Panel (1/3 size - lg:col-span-4) */}
+        <section className="lg:col-span-4 flex flex-col gap-6 text-left">
+          <div className="glass p-6 rounded-2xl flex flex-col gap-5">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-500" /> Input Parameters
+              </h2>
+              
+              {/* Language Switch */}
+              <div className="flex bg-navy rounded-lg p-0.5 border border-white/5">
+                <button
+                  onClick={() => setInputLanguage('en')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${inputLanguage === 'en' ? 'bg-amber-500 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  🇬🇧 EN
+                </button>
+                <button
+                  onClick={() => setInputLanguage('km')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${inputLanguage === 'km' ? 'bg-amber-500 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  🇰🇭 ខ្មែរ
+                </button>
+              </div>
+            </div>
             
+            {/* Form Fields */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-light/80">Product Name (EN)</label>
+              <label className="text-xs font-bold text-slate-300">
+                {inputLanguage === 'km' ? 'ឈ្មោះផលិតផល' : 'Product Name'}
+              </label>
               <input 
                 type="text" 
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber/40 text-white text-sm outline-none transition-all duration-200"
+                placeholder={inputLanguage === 'km' ? 'ឧទាហរណ៍៖ ស្វាយសម្ងួត' : 'e.g. Dried Spicy Mango'}
+                className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber-500/40 text-white text-sm outline-none transition-all"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-light/80">Raw Ingredients & %</label>
+              <label className="text-xs font-bold text-slate-300">
+                {inputLanguage === 'km' ? 'គ្រឿងផ្សំ និង ភាគរយ' : 'Ingredients & percentages'}
+              </label>
               <textarea 
                 rows={3}
                 value={rawIngredients}
                 onChange={(e) => setRawIngredients(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber/40 text-white text-sm outline-none transition-all duration-200"
+                placeholder={inputLanguage === 'km' ? 'ឧទាហរណ៍៖ ស្វាយទុំ ៨៥%, ស្ករស ១២%' : 'e.g. Ripe Mango 85%, Sugar 12%'}
+                className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber-500/40 text-white text-sm outline-none transition-all resize-none"
               />
-              <span className="text-[10px] text-slate-light/50">Example: Ripe Mango 85%, Sugar 12%, Chili 3%</span>
+              <span className="text-[10px] text-slate-500">
+                {inputLanguage === 'km' ? 'បំបែកគ្រឿងផ្សំដោយសញ្ញាក្បៀស (,)' : 'Separate ingredients with commas (,)'}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-light/80">Net Weight</label>
+                <label className="text-xs font-bold text-slate-300">
+                  {inputLanguage === 'km' ? 'ទម្ងន់សុទ្ធ' : 'Net Weight'}
+                </label>
                 <input 
                   type="text" 
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber/40 text-white text-sm outline-none transition-all duration-200"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber-500/40 text-white text-sm outline-none transition-all"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-light/80">Expiry Period</label>
+                <label className="text-xs font-bold text-slate-300">
+                  {inputLanguage === 'km' ? 'រយៈពេលផុតកំណត់' : 'Expiry Period'}
+                </label>
                 <input 
                   type="text" 
                   value={expiry}
                   onChange={(e) => setExpiry(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber/40 text-white text-sm outline-none transition-all duration-200"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber-500/40 text-white text-sm outline-none transition-all"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-light/80">GS1 Barcode Value (EAN-13)</label>
+              <label className="text-xs font-bold text-slate-300">GS1 Barcode Value (EAN-13)</label>
               <input 
                 type="text" 
                 value={barcodeText}
                 onChange={(e) => setBarcodeText(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber/40 text-white text-sm outline-none transition-all duration-200"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber-500/40 text-white text-sm outline-none transition-all"
               />
             </div>
 
             <button 
               onClick={handleGenerate}
               disabled={isLoading}
-              className="mt-2 w-full py-3 rounded-xl bg-gradient-to-tr from-amber to-amber-light hover:from-amber-light hover:to-amber text-white font-semibold shadow-lg shadow-amber/20 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-2"
+              className="mt-2 w-full py-3 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white font-bold shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
             >
               {isLoading ? (
                 <>
-                  <RefreshCw className="animate-spin" size={16} /> Parsing Compliance...
+                  <RefreshCw className="animate-spin" size={16} /> Generating Compliance...
                 </>
               ) : (
                 <>
@@ -250,214 +326,105 @@ export default function Dashboard({ onLogout }) {
               )}
             </button>
           </div>
+
+          {/* Unit Economics - Collapsible Card */}
+          <div className="glass rounded-2xl overflow-hidden">
+            <button 
+              onClick={() => setIsEconomicsOpen(!isEconomicsOpen)}
+              className="w-full p-4 flex justify-between items-center text-left hover:bg-white/5 transition-all"
+            >
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Layers size={16} className="text-amber-500" /> Co-op Unit Economics
+              </span>
+              <span className="text-xs text-slate-400">{isEconomicsOpen ? 'Hide' : 'Show'}</span>
+            </button>
+            
+            {isEconomicsOpen && (
+              <div className="p-5 border-t border-white/5 flex flex-col gap-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">PackCo Aggregated Cost:</span>
+                  <span className="font-bold text-green-400">$0.16 / unit</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Maker Retail Price (100 MOQ):</span>
+                  <span className="font-bold text-white">$0.25 / unit</span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
+                  <span className="text-slate-400">PackCo Platform Margin:</span>
+                  <span className="font-bold text-amber-500">36% ($0.09)</span>
+                </div>
+                
+                <div className="p-2.5 rounded-lg bg-green-500/5 border border-green-500/10 text-[10px] text-green-400 leading-normal">
+                  <strong>Co-op Savings:</strong> Pooling print volumes saves makers ~38% compared to custom small-batch runs.
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
-        {/* Center Column: Live Label Preview (lg:col-span-4) */}
-        <section className="lg:col-span-4 flex flex-col gap-6 items-center">
-          <div className="w-full glass p-6 rounded-2xl flex flex-col gap-4 text-left">
-            <div className="flex justify-between items-center border-b border-white/5 pb-3">
-              <h2 className="text-base font-bold text-white">Live Compliance Preview</h2>
-              <button 
-                onClick={handlePrint}
-                className="px-3 py-1.5 rounded bg-amber hover:bg-amber-light text-white text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 shadow"
+        {/* Right Column: Preview & Template Selector (2/3 size - lg:col-span-8) */}
+        <section className="lg:col-span-8 flex flex-col gap-6 items-center">
+          <div className="w-full glass p-6 rounded-2xl flex flex-col gap-6 text-left">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-white/5 pb-4">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <Layout size={18} className="text-amber-500" /> Compliance Studio
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">Select a template to preview and export your compliant label.</p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handlePrint}
+                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/10"
+                >
+                  <FileDown size={14} /> Export Label (PDF)
+                </button>
+              </div>
+            </div>
+
+            {/* Template Selector Strip */}
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => setActiveTemplate('pouch')}
+                className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === 'pouch' ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
               >
-                <FileDown size={14} /> Export PDF
+                <div className="text-xs font-bold text-white">🍊 Pouch Label</div>
+                <div className="text-[10px] text-slate-400 mt-1">Accent band, bilingual table</div>
+              </button>
+
+              <button
+                onClick={() => setActiveTemplate('kraft')}
+                className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === 'kraft' ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
+              >
+                <div className="text-xs font-bold text-white">🌾 Premium Kraft</div>
+                <div className="text-[10px] text-slate-400 mt-1">Artisan minimal, warm tone</div>
+              </button>
+
+              <button
+                onClick={() => setActiveTemplate('panel')}
+                className={`p-3 rounded-xl border text-left transition-all ${activeTemplate === 'panel' ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-navy/30 border-white/5 hover:border-white/10'}`}
+              >
+                <div className="text-xs font-bold text-white">📜 Back Panel</div>
+                <div className="text-[10px] text-slate-400 mt-1">Structured FDA layout</div>
               </button>
             </div>
 
-            {/* Label Wrapper (styled to look like a physical package label tag) */}
-            <div className="mx-auto w-full max-w-[240px] bg-white text-black p-4 border-2 border-black rounded shadow-2xl flex flex-col gap-2 font-sans">
-              <div className="text-center font-outfit font-extrabold text-sm border-b-2 border-black pb-1.5 uppercase tracking-wide">
-                PackCo Compliance
+            {/* Large Label Preview Area */}
+            <div className="flex-1 min-h-[420px] bg-navy-dark/40 rounded-xl border border-white/5 flex items-center justify-center p-6 relative overflow-auto">
+              <div className="absolute top-3 left-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none">
+                Label Canvas Preview
               </div>
               
-              {/* Product Title */}
-              <div className="text-center">
-                <div className="font-bold text-base leading-tight font-sans">{labelData.productNameKhmer || labelData.productNameKh}</div>
-                <div className="text-[10px] text-slate-dark italic leading-none">{productName}</div>
-              </div>
-
-              {/* Nutrition Facts */}
-              <div className="border-t border-black pt-1">
-                <div className="text-center font-extrabold text-xs tracking-wider">ព័ត៌មានអាហារូបត្ថម្ភ / Nutrition</div>
-                <div className="text-[9px] text-center border-b border-black pb-0.5">ទំហំនៃការបម្រើ / Serving Size: {weight}</div>
-                
-                <div className="flex flex-col text-[10px] gap-0.5 mt-1">
-                  <div className="flex justify-between font-bold border-b border-slate-100">
-                    <span>ថាមពល / Calories</span>
-                    <span>{labelData.nutritionFacts.calories} kcal</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-100">
-                    <span>ជាតិខ្លាញ់ / Total Fat</span>
-                    <span>{labelData.nutritionFacts.fat}g</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-100">
-                    <span>កាបូអ៊ីដ្រាត / Carbs</span>
-                    <span>{labelData.nutritionFacts.carbs}g</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-100">
-                    <span>ប្រូតេអ៊ីន / Protein</span>
-                    <span>{labelData.nutritionFacts.protein}g</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-100">
-                    <span>សូដ្យូម / Sodium</span>
-                    <span>{labelData.nutritionFacts.sodium}mg</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ingredients List */}
-              <div className="border-t border-black pt-1 flex flex-col gap-0.5">
-                <div className="font-extrabold text-[9px]">គ្រឿងផ្សំ / Ingredients:</div>
-                <div className="text-[9px] leading-tight font-sans">
-                  {labelData.ingredients.map(i => `${i.nameKh} (${i.percentage}%)`).join(', ')}
-                </div>
-              </div>
-
-              {/* Allergens warning if any */}
-              {labelData.allergensKh.length > 0 && (
-                <div className="border border-red-500 bg-red-50 p-1 rounded text-[8px] leading-tight flex items-start gap-1">
-                  <AlertTriangle className="text-red-500 shrink-0" size={10} />
-                  <div>
-                    <strong className="text-red-700">អាឡែហ្ស៊ី / Allergens:</strong><br />
-                    {labelData.allergensKh.join(', ')}
-                  </div>
-                </div>
-              )}
-
-              {/* Warnings */}
-              <div className="border-t border-black pt-1 text-center text-[8px] font-semibold text-red-600">
-                {labelData.mandatoryWarningsKh.join('. ')}
-              </div>
-
-              {/* Barcode SVG */}
-              <div className="border-t border-black pt-2 flex justify-center">
-                <svg ref={barcodeRef} id="barcode"></svg>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Right Column: Economics & Print Queue (lg:col-span-4) */}
-        <section className="lg:col-span-4 flex flex-col gap-6">
-          
-          {/* Unit Economics Calculator */}
-          <div className="glass p-6 rounded-2xl flex flex-col gap-4 text-left">
-            <h2 className="text-base font-bold text-white border-b border-white/5 pb-3 flex items-center gap-2">
-              <Layers size={18} className="text-amber" /> Co-op Unit Economics
-            </h2>
-            
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-light/70">PackCo Aggregated Cost:</span>
-                <span className="text-sm font-bold text-green-400">$0.16 / unit</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-light/70">Maker Retail Price (100 MOQ):</span>
-                <span className="text-sm font-bold text-white">$0.25 / unit</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-xs text-slate-light/70">PackCo Platform Margin:</span>
-                <span className="text-sm font-bold text-amber">36% ($0.09)</span>
-              </div>
-              
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-slate-light/70">DIY Paper Sticker Cost:</span>
-                <span className="text-sm text-slate-light/50 line-through">$0.26 / unit</span>
-              </div>
-              <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10 text-[11px] text-green-400 leading-relaxed">
-                <strong>Saving:</strong> You save 38% on manual labor and print custom waterproof, legally compliant food bags.
-              </div>
-            </div>
-          </div>
-
-          {/* Co-op Print Queue Simulator */}
-          <div className="glass p-6 rounded-2xl flex flex-col gap-4 text-left">
-            <h2 className="text-base font-bold text-white border-b border-white/5 pb-3">Co-op Print Queue</h2>
-            
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-white">Matte Kraft Pouch (100g)</span>
-                  <span className="text-slate-light/60">3,450 / 5,000 units</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-navy/60 overflow-hidden">
-                  <div className="h-full bg-amber rounded-full" style={{ width: '69%' }}></div>
-                </div>
-                <span className="text-[10px] text-slate-light/50">Needs 1,550 units to pool and print.</span>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-white">Shiny Foil Pouch (250g)</span>
-                  <span className="text-slate-light/60">4,800 / 5,000 units</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-navy/60 overflow-hidden">
-                  <div className="h-full bg-green-400 rounded-full" style={{ width: '96%' }}></div>
-                </div>
-                <span className="text-[10px] text-green-400 flex items-center gap-1">
-                  <CheckCircle2 size={12} /> Almost full! Print run triggers soon.
-                </span>
-              </div>
+              {renderSelectedTemplate()}
             </div>
           </div>
         </section>
 
       </main>
 
-      {/* Hidden container specifically styled for clean PDF prints */}
-      <div className="hidden print:block label-print-container bg-white text-black p-6 border border-black max-w-[240px] font-sans">
-        <div className="text-center font-outfit font-extrabold text-sm border-b-2 border-black pb-1.5 uppercase tracking-wide">
-          PackCo Compliance
-        </div>
-        <div className="text-center mt-2">
-          <div className="font-bold text-base leading-tight font-sans">{labelData.productNameKhmer || labelData.productName}</div>
-          <div className="text-[9px] text-slate-dark italic leading-none">{productName}</div>
-        </div>
-        <div className="border-t border-black pt-1 mt-2">
-          <div className="text-center font-extrabold text-xs tracking-wider">ព័ត៌មានអាហារូបត្ថម្ភ / Nutrition</div>
-          <div className="text-[8px] text-center border-b border-black pb-0.5">ទំហំនៃការបម្រើ / Serving Size: {weight}</div>
-          <div className="flex flex-col text-[10px] gap-0.5 mt-1">
-            <div className="flex justify-between font-bold border-b border-slate-100">
-              <span>ថាមពល / Calories</span>
-              <span>{labelData.nutritionFacts.calories} kcal</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100">
-              <span>ជាតិខ្លាញ់ / Total Fat</span>
-              <span>{labelData.nutritionFacts.fat}g</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100">
-              <span>កាបូអ៊ីដ្រាត / Carbs</span>
-              <span>{labelData.nutritionFacts.carbs}g</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100">
-              <span>ប្រូតេអ៊ីន / Protein</span>
-              <span>{labelData.nutritionFacts.protein}g</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100">
-              <span>សូដ្យូម / Sodium</span>
-              <span>{labelData.nutritionFacts.sodium}mg</span>
-            </div>
-          </div>
-        </div>
-        <div className="border-t border-black pt-1 mt-2 flex flex-col gap-0.5">
-          <div className="font-extrabold text-[8px]">គ្រឿងផ្សំ / Ingredients:</div>
-          <div className="text-[8px] leading-tight font-sans">
-            {labelData.ingredients.map(i => `${i.nameKh} (${i.percentage}%)`).join(', ')}
-          </div>
-        </div>
-        {labelData.allergensKh.length > 0 && (
-          <div className="border border-red-500 bg-red-50 p-1 rounded text-[8px] leading-tight mt-1 flex items-start gap-1">
-            <div className="text-red-700 font-bold">អាឡែហ្ស៊ី / Allergens:</div>
-            <div>{labelData.allergensKh.join(', ')}</div>
-          </div>
-        )}
-        <div className="border-t border-black pt-1 mt-2 text-center text-[8px] font-semibold text-red-600">
-          {labelData.mandatoryWarningsKh.join('. ')}
-        </div>
-        <div className="border-t border-black pt-2 mt-2 flex justify-center">
-          <svg ref={barcodeRef}></svg>
-        </div>
+      {/* Hidden print container for high-quality export */}
+      <div className="hidden print:block">
+        {renderSelectedTemplate()}
       </div>
     </div>
   );

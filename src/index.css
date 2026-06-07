@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Kantumruy+Pro:ital,wght@0,100..900;1,100..900&family=Hanuman:wght@100;300;400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@100..900&family=Kantumruy+Pro:ital,wght@0,100..900;1,100..900&family=Hanuman:wght@100;300;400;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,6 +12,11 @@
   h1, h2, h3, h4 {
     @apply font-outfit text-white;
   }
+}
+
+.font-khmer {
+  font-family: 'Noto Sans Khmer', 'Kantumruy Pro', 'Hanuman', sans-serif;
+  line-height: 1.8;
 }
 
 /* Print-specific layout rules to export the label clean and header-free */

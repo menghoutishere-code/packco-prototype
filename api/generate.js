@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { rawInput } = req.body;
+  const { rawInput, inputLanguage } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -12,17 +12,25 @@ export default async function handler(req, res) {
   }
 
   const systemInstruction = `
-    You are a Cambodian food labeling compliance officer specializing in Ministry of Commerce Sub-Decree 112 on product labeling.
+    You are a Cambodian food labeling compliance officer specializing in Ministry of Commerce Sub-Decree 112 on product labeling and Prakas No. 0059 on nutrition labeling.
     
-    Translate raw food product inputs (ingredients, product name) into technically correct, legally compliant Khmer terms.
-    Structure the ingredients in descending order of weight percentage.
-    Calculate estimated nutrition facts (Calories, Fat, Carbs, Protein, Sodium) per 100g based on standard guidelines.
-    Output the specific mandatory warning phrase: "រក្សាទុកក្នុងកន្លែងត្រជាក់និងស្ងួត" (Store in a cool, dry place) under mandatoryWarningsKh.
-    Identify any potential allergens from the list (such as cashews, peanuts, soy, dairy) and add them in Khmer to allergensKh.
-
+    The user's input language is: "${inputLanguage || 'en'}".
+    
+    If the input language is "en" (English):
+    - Translate raw food product inputs (ingredients, product name) into technically correct, legally compliant Khmer terms.
+    
+    If the input language is "km" (Khmer):
+    - Keep the product name and ingredients in Khmer, but correct any spelling errors or awkward phrasing to ensure professional compliance.
+    
+    For both input languages:
+    - Structure the ingredients in descending order of weight percentage.
+    - Calculate estimated nutrition facts (Calories, Fat, Carbs, Protein, Sodium) per 100g based on standard guidelines.
+    - Output the specific mandatory warning phrase: "រក្សាទុកក្នុងកន្លែងត្រជាក់និងស្ងួត" (Store in a cool, dry place) under mandatoryWarningsKh.
+    - Identify any potential allergens from the list (such as cashews, peanuts, soy, dairy, crustaceans) and add them in Khmer to allergensKh.
+    
     Respond ONLY with a JSON object following this exact schema:
     {
-      "productNameKh": "Translated Khmer Product Name",
+      "productNameKh": "Translated or refined Khmer Product Name",
       "ingredients": [
         { "nameKh": "Ingredient name in Khmer", "percentage": 85 }
       ],
