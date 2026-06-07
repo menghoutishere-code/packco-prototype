@@ -16,6 +16,9 @@ export function devApiPlugin() {
         if (!req.url || !req.url.startsWith('/api/')) return next();
 
         const name = req.url.split('?')[0].replace(/^\/api\//, '').replace(/\/$/, '');
+        // Allowlist the handler name so a crafted URL (e.g. /api/../../evil) can't
+        // escape apiDir and execute an arbitrary local .js file.
+        if (!/^[a-zA-Z0-9_-]+$/.test(name)) return next();
         const file = path.join(apiDir, `${name}.js`);
         if (!fs.existsSync(file)) return next();
 
