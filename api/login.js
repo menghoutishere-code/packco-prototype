@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   } else {
     return res.status(401).json({ 
       success: false, 
-      error: 'Invalid credentials. Please use admin/packco2026.' 
+      error: 'Invalid username or password.' 
     });
   }
 }

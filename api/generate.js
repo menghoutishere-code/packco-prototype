@@ -4,11 +4,27 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { rawInput, inputLanguage } = req.body;
+  // Safely parse the request body — on Vercel req.body can be undefined or a string.
+  let body = {};
+  if (typeof req.body === 'string') {
+    try {
+      body = JSON.parse(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+  } else if (req.body && typeof req.body === 'object') {
+    body = req.body;
+  }
+
+  const { rawInput, inputLanguage } = body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({ error: 'Gemini API key is not configured in Vercel environment variables.' });
+  }
+
+  if (!rawInput) {
+    return res.status(400).json({ error: 'Missing rawInput' });
   }
 
   const systemInstruction = `
@@ -69,9 +85,32 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const resultText = data.candidates[0].content.parts[0].text;
-    
+
+    // The model may wrap output in markdown fences or surround it with prose.
+    // Strip ```json / ``` fences, then fall back to extracting the first {...} block.
+    let cleaned = resultText.trim();
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+        } catch (e2) {
+          parsed = null;
+        }
+      }
+    }
+
+    if (!parsed) {
+      return res.status(502).json({ error: 'Model returned non-JSON', details: resultText.slice(0, 300) });
+    }
+
     // Return parsed JSON directly
-    return res.status(200).json(JSON.parse(resultText.trim()));
+    return res.status(200).json(parsed);
   } catch (error) {
     console.error("AI Generation error:", error);
     return res.status(500).json({ error: 'Failed to process AI compliance formatting.' });

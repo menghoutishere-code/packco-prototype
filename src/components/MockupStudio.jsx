@@ -110,20 +110,44 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
   const [selectedMockup, setSelectedMockup] = useState(MOCKUP_DATA[0]);
   const [compositeDataUrl, setCompositeDataUrl] = useState(null);
   const [isWarping, setIsWarping] = useState(false);
-  const [isDenoising, setIsDenoising] = useState(false);
   const [refinementSuccess, setRefinementSuccess] = useState(false);
   const [mockupPrompt, setMockupPrompt] = useState('project label onto front of package, blending colors and lighting naturally');
-  const [aiComposedSvg, setAiComposedSvg] = useState(null);
+  const [resultImage, setResultImage] = useState(null);
+  const [usingFallbackHero, setUsingFallbackHero] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    // Clear AI SVG when switching mockups or templates to force refresh/local preview
-    setAiComposedSvg(null);
+    // Clear AI result when switching mockups or templates to force refresh/local preview
+    setResultImage(null);
+    setUsingFallbackHero(false);
     setRefinementSuccess(false);
     generateCompositeMockup();
   }, [selectedMockup, labelData, productName, weight, expiry, barcodeText, activeTemplate, customLogoSvg, customLogoUrl]);
+
+  // Renders the 2D label onto a fresh in-memory scratch canvas using the same
+  // drawLabel2D call (and props) used by the local composite preview.
+  const renderLabelScratchCanvas = async () => {
+    const scratchCanvas = document.createElement('canvas');
+    const isPanel = activeTemplate === 'panel';
+    scratchCanvas.width = isPanel ? 600 : 900;
+    scratchCanvas.height = isPanel ? 1200 : 600;
+
+    await drawLabel2D(
+      scratchCanvas,
+      labelData,
+      productName,
+      weight,
+      expiry,
+      barcodeText,
+      activeTemplate,
+      customLogoSvg,
+      customLogoUrl
+    );
+
+    return scratchCanvas;
+  };
 
   const generateCompositeMockup = async () => {
     setIsWarping(true);
@@ -140,22 +164,7 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
       ctx.drawImage(mockupImg, 0, 0, selectedMockup.width, selectedMockup.height);
 
       // 2. Generate high-res 2D label on hidden scratch canvas
-      const scratchCanvas = document.createElement('canvas');
-      const isPanel = activeTemplate === 'panel';
-      scratchCanvas.width = isPanel ? 600 : 900;
-      scratchCanvas.height = isPanel ? 1200 : 600;
-
-      await drawLabel2D(
-        scratchCanvas, 
-        labelData, 
-        productName, 
-        weight, 
-        expiry, 
-        barcodeText, 
-        activeTemplate, 
-        customLogoSvg,
-        customLogoUrl
-      );
+      const scratchCanvas = await renderLabelScratchCanvas();
 
       // 3. Apply perspective warp for each quadrilateral mapping in the selected mockup template
       selectedMockup.quads.forEach(quad => {
@@ -178,62 +187,65 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
   const handleAiMockupGeneration = async () => {
     setIsAiGenerating(true);
     setRefinementSuccess(false);
+    setUsingFallbackHero(false);
     try {
+      // Render the label to a fresh scratch canvas and extract a print-ready PNG
+      const scratchCanvas = await renderLabelScratchCanvas();
+      const labelPng = scratchCanvas.toDataURL('image/png').split(',')[1];
+
       const response = await fetch('/api/mockup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mockupId: selectedMockup.id,
-          labelData,
-          customLogoSvg,
+          labelPng,
           userPrompt: mockupPrompt
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.svg) {
-          setAiComposedSvg(data.svg);
-          setRefinementSuccess(true);
-        } else {
-          throw new Error('No SVG returned');
-        }
-      } else {
+      if (!response.ok) {
         throw new Error('API request failed');
       }
+
+      const data = await response.json();
+      if (!data.image) {
+        throw new Error('No image returned');
+      }
+
+      setResultImage(data.image);
+      setRefinementSuccess(true);
     } catch (err) {
-      console.warn("AI Mockup failed, falling back to local canvas bake", err);
-      // Fallback: simulate AI bake locally
-      setIsDenoising(true);
-      setTimeout(() => {
-        setIsDenoising(false);
-        setRefinementSuccess(true);
-      }, 1500);
+      console.warn("AI Mockup failed, falling back to pre-rendered hero", err);
+      // Hero fallback insurance: show a pre-baked sample for this package type.
+      // If the file is missing the <img> onError handler swaps in the local composite.
+      setUsingFallbackHero(true);
+      setResultImage(`/hero/${selectedMockup.packageType}.jpg`);
     } finally {
       setIsAiGenerating(false);
     }
   };
 
-  const handleDownload = () => {
-    if (aiComposedSvg) {
-      // Download SVG mockup
-      const blob = new Blob([aiComposedSvg], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${selectedMockup.id}-ai-mockup.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+  const triggerDownload = (href, filename) => {
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadLabel = async () => {
+    // Print-ready label: render label to a scratch canvas and export PNG
+    const scratchCanvas = await renderLabelScratchCanvas();
+    triggerDownload(scratchCanvas.toDataURL('image/png'), `${selectedMockup.id}-label.png`);
+  };
+
+  const handleDownloadMockup = () => {
+    // Marketing mockup: AI result if present, otherwise the local composite preview
+    if (resultImage) {
+      triggerDownload(resultImage, `${selectedMockup.id}-mockup.png`);
     } else if (compositeDataUrl) {
-      // Download local composite JPG
-      const link = document.createElement('a');
-      link.href = compositeDataUrl;
-      link.download = `${selectedMockup.id}-local-mockup.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      triggerDownload(compositeDataUrl, `${selectedMockup.id}-mockup.png`);
     }
   };
 
@@ -298,11 +310,11 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">API Generator:</span>
-            <span className="font-semibold text-green-400">gemini-2.5-flash (Free)</span>
+            <span className="font-semibold text-green-400">gemini-3.1-flash-image</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Texture Compositor:</span>
-            <span className="font-semibold text-slate-200">SVG Coordinate Transforms</span>
+            <span className="font-semibold text-slate-200">Nano Banana image-to-image</span>
           </div>
         </div>
 
@@ -321,17 +333,25 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
               </>
             ) : (
               <>
-                <Sparkles size={14} className="text-amber-500" /> Bake AI Mockup (Free Tier)
+                <Sparkles size={14} className="text-amber-500" /> Generate AI Mockup
               </>
             )}
           </button>
 
           <button
-            onClick={handleDownload}
+            onClick={handleDownloadMockup}
             disabled={isWarping || isAiGenerating}
             className="w-full py-3 rounded-xl font-bold bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
           >
-            <FileDown size={16} /> Download Mockup
+            <FileDown size={16} /> Download Marketing Mockup
+          </button>
+
+          <button
+            onClick={handleDownloadLabel}
+            disabled={isWarping || isAiGenerating}
+            className="w-full py-2.5 rounded-xl font-bold bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 transition-all flex items-center justify-center gap-2"
+          >
+            <FileDown size={14} /> Download Print-Ready Label
           </button>
         </div>
       </div>
@@ -346,28 +366,40 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
         <canvas ref={canvasRef} className="hidden" />
 
         {isAiGenerating ? (
-          <div className="flex flex-col items-center gap-3 animate-pulse text-slate-400">
+          <div className="flex flex-col items-center gap-3 text-slate-400">
             <RefreshCw className="animate-spin" size={24} />
-            <span className="text-xs font-semibold">Gemini 2.5 compiling geometry & textures...</span>
+            <span className="text-xs font-semibold">Generating AI marketing mockup...</span>
           </div>
         ) : isWarping ? (
           <div className="flex flex-col items-center gap-3 animate-pulse text-slate-400">
             <RefreshCw className="animate-spin" size={24} />
             <span className="text-xs font-semibold">Projecting 2D label coordinates onto 3D Mesh...</span>
           </div>
-        ) : aiComposedSvg ? (
-          // Display the AI composited SVG
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div 
-              className="w-full max-w-[480px] aspect-[1408/768] rounded-xl border border-white/10 overflow-hidden shadow-2xl bg-white flex items-center justify-center svg-mockup-frame"
-              dangerouslySetInnerHTML={{ __html: aiComposedSvg }}
-            />
-            <span className="px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold uppercase flex items-center gap-1 animate-bounce">
-              <Check size={12} /> AI Composite Compiled Successfully
-            </span>
+        ) : resultImage ? (
+          // Display the AI marketing mockup (hero). On error fall back to local composite.
+          <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+            <div className="w-full max-w-[480px] aspect-[1408/768] rounded-xl border border-white/10 bg-white/5 shadow-2xl overflow-hidden flex items-center justify-center">
+              <img
+                src={resultImage}
+                alt="AI Marketing Mockup"
+                className="max-w-full max-h-full object-contain"
+                onError={(e) => {
+                  if (compositeDataUrl) e.currentTarget.src = compositeDataUrl;
+                }}
+              />
+            </div>
+            {usingFallbackHero ? (
+              <span className="px-3 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold uppercase flex items-center gap-1">
+                Showing pre-rendered sample (live generation unavailable)
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold uppercase flex items-center gap-1 animate-bounce">
+                <Check size={12} /> AI Marketing Mockup Generated
+              </span>
+            )}
           </div>
         ) : (
-          // Fallback to local canvas-composited image
+          // Instant local preview from the client perspective warp
           compositeDataUrl && (
             <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
               <div className="w-full max-w-[480px] aspect-[1408/768] rounded-xl border border-white/10 bg-white/5 shadow-2xl overflow-hidden flex items-center justify-center">
@@ -377,21 +409,17 @@ export default function MockupStudio({ labelData, productName, weight, expiry, b
                   className="max-w-full max-h-full object-contain"
                 />
               </div>
-              
-              {refinementSuccess && (
-                <span className="px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold uppercase flex items-center gap-1 animate-bounce">
-                  <Check size={12} /> Denoise Refined (0.12) - Textures Baked Successfully
-                </span>
-              )}
             </div>
           )
         )}
 
         <div className="text-center max-w-md mt-2">
           <p className="text-xs font-semibold text-slate-400 leading-normal">
-            {aiComposedSvg 
-              ? 'Showing the AI-composited packaging mockups. Gemini dynamically mapped the label onto the container surfaces.'
-              : 'Showing local canvas perspective mapping. Click "Bake AI Mockup" above to run the prompt-driven composition.'
+            {resultImage
+              ? (usingFallbackHero
+                  ? 'Showing a pre-rendered sample mockup. Live AI generation was unavailable for this run.'
+                  : 'Showing the AI marketing mockup. Gemini wrapped the label onto the container surface.')
+              : 'Showing the instant local perspective preview. Click "Generate AI Mockup" above to run the real image-to-image wrap.'
             }
           </p>
         </div>

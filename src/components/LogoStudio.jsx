@@ -150,15 +150,20 @@ export default function LogoStudio({ productName, onApplyLogo }) {
 
   const [logoPrompt, setLogoPrompt] = useState(productName ? `${productName} minimalist brand icon` : 'mango fruit emblem');
   const [generatedSvg, setGeneratedSvg] = useState(null);
+  const [generatedImage, setGeneratedImage] = useState(null);
 
   const handleApplyLogo = () => {
-    const svgCode = generatedSvg || generateVectorSvg();
-    onApplyLogo(svgCode, null);
+    if (generatedImage) {
+      onApplyLogo(null, generatedImage);
+    } else {
+      onApplyLogo(generatedSvg || generateVectorSvg(), null);
+    }
   };
 
   const handleRealAiGeneration = async () => {
     setIsGenerating(true);
     setGeneratedSvg(null);
+    setGeneratedImage(null);
     try {
       const response = await fetch('/api/logo', {
         method: 'POST',
@@ -174,10 +179,11 @@ export default function LogoStudio({ productName, onApplyLogo }) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.svg) {
-          setGeneratedSvg(data.svg);
+        if (data.image) {
+          setGeneratedImage(data.image);
+          setGeneratedSvg(null);
         } else {
-          throw new Error('No SVG returned');
+          throw new Error('No image returned');
         }
       } else {
         throw new Error('API failed');
@@ -204,7 +210,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           <textarea
             rows={3}
             value={logoPrompt}
-            onChange={(e) => { setLogoPrompt(e.target.value); setGeneratedSvg(null); }}
+            onChange={(e) => { setLogoPrompt(e.target.value); setGeneratedSvg(null); setGeneratedImage(null); }}
             placeholder="e.g. A detailed line art mango fruit, organic traditional vibes"
             className="w-full px-3 py-2 rounded-lg bg-navy/50 border border-white/5 text-white text-xs outline-none focus:border-amber-500/40 resize-none"
           />
@@ -216,7 +222,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           <input
             type="text"
             value={brandName}
-            onChange={(e) => { setBrandName(e.target.value); setGeneratedSvg(null); }}
+            onChange={(e) => { setBrandName(e.target.value); setGeneratedSvg(null); setGeneratedImage(null); }}
             placeholder="e.g. Agri Khmer"
             className="w-full px-3 py-2 rounded-lg bg-navy/50 border border-white/5 text-white text-sm outline-none focus:border-amber-500/40"
           />
@@ -228,7 +234,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           <input
             type="text"
             value={estYear}
-            onChange={(e) => { setEstYear(e.target.value); setGeneratedSvg(null); }}
+            onChange={(e) => { setEstYear(e.target.value); setGeneratedSvg(null); setGeneratedImage(null); }}
             placeholder="e.g. 2026"
             className="w-full px-3 py-2 rounded-lg bg-navy/50 border border-white/5 text-white text-sm outline-none focus:border-amber-500/40"
           />
@@ -242,7 +248,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
               <input
                 type="color"
                 value={primaryColor}
-                onChange={(e) => { setPrimaryColor(e.target.value); setGeneratedSvg(null); }}
+                onChange={(e) => { setPrimaryColor(e.target.value); setGeneratedSvg(null); setGeneratedImage(null); }}
                 className="w-8 h-8 rounded border border-white/10 bg-transparent cursor-pointer"
               />
               <span className="text-xs text-slate-400 font-mono uppercase">{primaryColor}</span>
@@ -254,7 +260,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
               <input
                 type="color"
                 value={secondaryColor}
-                onChange={(e) => { setSecondaryColor(e.target.value); setGeneratedSvg(null); }}
+                onChange={(e) => { setSecondaryColor(e.target.value); setGeneratedSvg(null); setGeneratedImage(null); }}
                 className="w-8 h-8 rounded border border-white/10 bg-transparent cursor-pointer"
               />
               <span className="text-xs text-slate-400 font-mono uppercase">{secondaryColor}</span>
@@ -274,9 +280,9 @@ export default function LogoStudio({ productName, onApplyLogo }) {
             ].map(item => (
               <button
                 key={item.id}
-                onClick={() => { setStyle(item.id); setGeneratedSvg(null); }}
+                onClick={() => { setStyle(item.id); setGeneratedSvg(null); setGeneratedImage(null); }}
                 className={`py-1.5 px-2.5 rounded-lg text-[10px] font-semibold text-left border transition-all ${
-                  style === item.id && !generatedSvg
+                  style === item.id && !generatedSvg && !generatedImage
                     ? 'bg-amber-500/10 border-amber-500 text-white' 
                     : 'bg-navy/30 border-white/5 text-slate-400 hover:text-white'
                 }`}
@@ -300,7 +306,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
               </>
             ) : (
               <>
-                <Sparkles size={14} className="text-amber-500" /> AI Generate Logo (Free Tier)
+                <Sparkles size={14} className="text-amber-500" /> AI Generate Logo
               </>
             )}
           </button>
@@ -321,10 +327,14 @@ export default function LogoStudio({ productName, onApplyLogo }) {
         </div>
 
         <div className="w-64 h-64 rounded-xl border border-white/10 bg-white shadow-2xl flex items-center justify-center p-6 transition-all duration-300">
-          <div 
-            className="w-full h-full flex items-center justify-center logo-svg-preview"
-            dangerouslySetInnerHTML={{ __html: generatedSvg || generateVectorSvg() }} 
-          />
+          {generatedImage ? (
+            <img src={generatedImage} className="w-full h-full object-contain" />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center logo-svg-preview"
+              dangerouslySetInnerHTML={{ __html: generatedSvg || generateVectorSvg() }}
+            />
+          )}
         </div>
 
         <div className="text-center max-w-sm mt-2">
