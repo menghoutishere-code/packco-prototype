@@ -148,97 +148,66 @@ export default function LogoStudio({ productName, onApplyLogo }) {
     return '';
   };
 
+  const [logoPrompt, setLogoPrompt] = useState(productName ? `${productName} minimalist brand icon` : 'mango fruit emblem');
+  const [generatedSvg, setGeneratedSvg] = useState(null);
+
   const handleApplyLogo = () => {
-    if (selectedAssetLogo) {
-      onApplyLogo(null, selectedAssetLogo);
-    } else {
-      const svgCode = generateVectorSvg();
-      onApplyLogo(svgCode, null);
+    const svgCode = generatedSvg || generateVectorSvg();
+    onApplyLogo(svgCode, null);
+  };
+
+  const handleRealAiGeneration = async () => {
+    setIsGenerating(true);
+    setGeneratedSvg(null);
+    try {
+      const response = await fetch('/api/logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userPrompt: logoPrompt,
+          brandName,
+          estYear,
+          primaryColor,
+          secondaryColor
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.svg) {
+          setGeneratedSvg(data.svg);
+        } else {
+          throw new Error('No SVG returned');
+        }
+      } else {
+        throw new Error('API failed');
+      }
+    } catch (err) {
+      console.warn("AI Logo failed, using fallback vector template", err);
+      setGeneratedSvg(generateVectorSvg());
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handleSimulateAiGeneration = () => {
-    setIsGenerating(true);
-    setSelectedAssetLogo(null);
-    
-    // Simulate generation and match motifs to real high-res assets in public folder!
-    setTimeout(() => {
-      let assetUrl = '/logo/Organic-green-logo.jpg';
-      if (motif === 'mango') {
-        assetUrl = '/logo/mango-template-logobrand.jpg';
-      } else if (motif === 'cashew') {
-        assetUrl = '/logo/Cachew-nuts-logo.jpg';
-      } else if (motif === 'pepper') {
-        assetUrl = '/logo/Khmer Heritage Spice Seal.jpg';
-      } else if (motif === 'rice') {
-        assetUrl = '/logo/General Agro-Processing Emblem.jpg';
-      } else if (motif === 'farm') {
-        assetUrl = '/logo/Farm-template-design-logo.jpg';
-      }
-      
-      setSelectedAssetLogo(assetUrl);
-      setIsGenerating(false);
-    }, 1500);
-  };
-
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 text-left font-sans">
       {/* Left Panel: Inputs (1/3 size - lg:col-span-4) */}
       <div className="lg:col-span-4 flex flex-col gap-5 glass p-6 rounded-2xl">
         <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
           <Sparkles size={16} className="text-amber-500" /> Logo Parameters
         </h2>
 
-        {/* Motif Selector */}
+        {/* Dynamic Logo Prompt Textbox */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-300">Logo Motif (Subject)</label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'mango', name: '🍊 Mango' },
-              { id: 'cashew', name: '🥜 Cashew' },
-              { id: 'pepper', name: '🌶️ Pepper' },
-              { id: 'rice', name: '🌾 Rice' },
-              { id: 'leaf', name: '🍃 Leaf' },
-              { id: 'beehive', name: '🐝 Honey' }
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => { setMotif(item.id); setSelectedAssetLogo(null); }}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold text-center border transition-all ${
-                  motif === item.id && !selectedAssetLogo
-                    ? 'bg-amber-500/10 border-amber-500 text-white' 
-                    : 'bg-navy/30 border-white/5 text-slate-400 hover:text-white'
-                }`}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Style Selector */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-300">Logo Frame Style</label>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { id: 'seal', name: '⭕ Circular Seal' },
-              { id: 'stamp', name: '📇 Dotted Stamp' },
-              { id: 'hexagon', name: '🛑 Hexagon Emblem' },
-              { id: 'badge', name: '🛡️ Premium Shield' }
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => { setStyle(item.id); setSelectedAssetLogo(null); }}
-                className={`py-2 px-3 rounded-lg text-xs font-semibold text-left border transition-all ${
-                  style === item.id && !selectedAssetLogo
-                    ? 'bg-amber-500/10 border-amber-500 text-white' 
-                    : 'bg-navy/30 border-white/5 text-slate-400 hover:text-white'
-                }`}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
+          <label className="text-xs font-bold text-slate-300">Describe Logo Motif</label>
+          <textarea
+            rows={3}
+            value={logoPrompt}
+            onChange={(e) => { setLogoPrompt(e.target.value); setGeneratedSvg(null); }}
+            placeholder="e.g. A detailed line art mango fruit, organic traditional vibes"
+            className="w-full px-3 py-2 rounded-lg bg-navy/50 border border-white/5 text-white text-xs outline-none focus:border-amber-500/40 resize-none"
+          />
         </div>
 
         {/* Brand Text Input */}
@@ -247,7 +216,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           <input
             type="text"
             value={brandName}
-            onChange={(e) => { setBrandName(e.target.value); setSelectedAssetLogo(null); }}
+            onChange={(e) => { setBrandName(e.target.value); setGeneratedSvg(null); }}
             placeholder="e.g. Agri Khmer"
             className="w-full px-3 py-2 rounded-lg bg-navy/50 border border-white/5 text-white text-sm outline-none focus:border-amber-500/40"
           />
@@ -259,7 +228,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           <input
             type="text"
             value={estYear}
-            onChange={(e) => { setEstYear(e.target.value); setSelectedAssetLogo(null); }}
+            onChange={(e) => { setEstYear(e.target.value); setGeneratedSvg(null); }}
             placeholder="e.g. 2026"
             className="w-full px-3 py-2 rounded-lg bg-navy/50 border border-white/5 text-white text-sm outline-none focus:border-amber-500/40"
           />
@@ -273,7 +242,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
               <input
                 type="color"
                 value={primaryColor}
-                onChange={(e) => { setPrimaryColor(e.target.value); setSelectedAssetLogo(null); }}
+                onChange={(e) => { setPrimaryColor(e.target.value); setGeneratedSvg(null); }}
                 className="w-8 h-8 rounded border border-white/10 bg-transparent cursor-pointer"
               />
               <span className="text-xs text-slate-400 font-mono uppercase">{primaryColor}</span>
@@ -285,7 +254,7 @@ export default function LogoStudio({ productName, onApplyLogo }) {
               <input
                 type="color"
                 value={secondaryColor}
-                onChange={(e) => { setSecondaryColor(e.target.value); setSelectedAssetLogo(null); }}
+                onChange={(e) => { setSecondaryColor(e.target.value); setGeneratedSvg(null); }}
                 className="w-8 h-8 rounded border border-white/10 bg-transparent cursor-pointer"
               />
               <span className="text-xs text-slate-400 font-mono uppercase">{secondaryColor}</span>
@@ -293,10 +262,35 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           </div>
         </div>
 
+        {/* Quick presets (as fallback templates) */}
+        <div className="flex flex-col gap-1.5 border-t border-white/5 pt-3">
+          <label className="text-xs font-bold text-slate-300">Baseline Frame Style (Preset Fallback)</label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { id: 'seal', name: '⭕ Circular Seal' },
+              { id: 'stamp', name: '📇 Dotted Stamp' },
+              { id: 'hexagon', name: '🛑 Hexagon Emblem' },
+              { id: 'badge', name: '🛡️ Premium Shield' }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => { setStyle(item.id); setGeneratedSvg(null); }}
+                className={`py-1.5 px-2.5 rounded-lg text-[10px] font-semibold text-left border transition-all ${
+                  style === item.id && !generatedSvg
+                    ? 'bg-amber-500/10 border-amber-500 text-white' 
+                    : 'bg-navy/30 border-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 border-t border-white/5 pt-4">
           <button
-            onClick={handleSimulateAiGeneration}
+            onClick={handleRealAiGeneration}
             disabled={isGenerating}
             className="w-full py-2.5 rounded-xl font-bold bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 transition-all flex items-center justify-center gap-2 shadow"
           >
@@ -326,35 +320,18 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           Logo Artboard Preview
         </div>
 
-        {selectedAssetLogo ? (
-          // Pre-made high-res logo preview
-          <div className="flex flex-col items-center gap-4 animate-fade-in">
-            <div className="w-64 h-64 rounded-xl border border-white/10 bg-white shadow-2xl overflow-hidden flex items-center justify-center p-4">
-              <img 
-                src={selectedAssetLogo} 
-                alt="AI Generated Logo" 
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-            <span className="px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold uppercase flex items-center gap-1">
-              <ImageIcon size={12} /> High-Res Logo Asset Loaded
-            </span>
-          </div>
-        ) : (
-          // Vector custom preview
-          <div className="w-64 h-64 rounded-xl border border-white/10 bg-white shadow-2xl flex items-center justify-center p-6 transition-all duration-300">
-            <div 
-              className="w-full h-full flex items-center justify-center"
-              dangerouslySetInnerHTML={{ __html: generateVectorSvg() }} 
-            />
-          </div>
-        )}
+        <div className="w-64 h-64 rounded-xl border border-white/10 bg-white shadow-2xl flex items-center justify-center p-6 transition-all duration-300">
+          <div 
+            className="w-full h-full flex items-center justify-center logo-svg-preview"
+            dangerouslySetInnerHTML={{ __html: generatedSvg || generateVectorSvg() }} 
+          />
+        </div>
 
         <div className="text-center max-w-sm mt-2">
           <p className="text-xs font-semibold text-slate-400">
-            {selectedAssetLogo 
-              ? 'This high-res organic asset was pre-rendered using Nano Banana. It will wrap directly onto your mockups and compile into labels.'
-              : 'This is a fully customizable vector asset. Modifying brand text, year, or colors above updates the SVG layout in real time.'
+            {generatedSvg 
+              ? 'This is a dynamic AI-generated vector asset. Apply it to render it inside your compliance labels.'
+              : 'This is a template preview. Enter an AI prompt above and generate to design a custom graphic motif.'
             }
           </p>
         </div>

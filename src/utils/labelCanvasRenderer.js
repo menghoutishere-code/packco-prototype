@@ -40,152 +40,223 @@ export async function drawLabel2D(canvas, labelData, productName, weight, expiry
   const productNameKh = labelData.productNameKh || 'ឈ្មោះផលិតផល';
 
   if (templateType === 'kraft') {
-    // --- 1. PREMIUM KRAFT STYLE ---
-    // Background color
-    ctx.fillStyle = '#fdfaf4';
+    // --- 1. PREMIUM KRAFT STYLE (3-COLUMN LAYOUT) ---
+    // Background color (warm cream/kraft)
+    ctx.fillStyle = '#fcf9f2';
     ctx.fillRect(0, 0, w, h);
 
-    // Border
+    // Borders
     ctx.strokeStyle = '#c4b9ad';
     ctx.lineWidth = 4;
     ctx.strokeRect(10, 10, w - 20, h - 20);
 
     // Decorative inner thin border
-    ctx.strokeStyle = '#dcd4c9';
+    ctx.strokeStyle = '#e8dfd3';
     ctx.lineWidth = 1;
     ctx.strokeRect(18, 18, w - 36, h - 36);
 
-    // Brand Header
-    ctx.fillStyle = '#786c62';
-    ctx.font = `800 12px ${primarySansFont}`;
-    ctx.textAlign = 'center';
-    ctx.fillText('ARTISANAL HERITAGE', w / 2, 45);
-
-    // Brand Logo Asset (if available)
-    let nextY = 80;
-    if (logoImgUrl) {
-      const img = await loadImage(logoImgUrl);
-      const aspect = img.width / img.height;
-      const lw = 90;
-      const lh = lw / aspect;
-      ctx.save();
-      // Draw image circle cropped or with mix-blend-multiply
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.drawImage(img, w / 2 - lw / 2, nextY, lw, lh);
-      ctx.restore();
-      nextY += lh + 15;
-    }
-
-    // Product Title Khmer
+    // Subtle texture pattern
+    ctx.save();
+    ctx.globalAlpha = 0.02;
     ctx.fillStyle = '#3d2e24';
-    ctx.font = `bold 26px ${primaryKhmerFont}`;
-    ctx.textAlign = 'center';
-    ctx.fillText(productNameKh, w / 2, nextY);
-    nextY += 28;
-
-    // English subtitle
-    if (productName) {
-      ctx.fillStyle = '#706459';
-      ctx.font = `500 13px ${primarySansFont}`;
-      ctx.fillText(`— ${productName.toUpperCase()} —`, w / 2, nextY);
-      nextY += 25;
+    for (let r = 0; r < h; r += 16) {
+      for (let c = 0; c < w; c += 16) {
+        ctx.beginPath();
+        ctx.arc(c, r, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
+    ctx.restore();
 
-    // Origin Badge
+    const colW = (w - 80) / 3;
+
+    // LEFT COLUMN (x from 30 to 30 + colW)
+    const leftX = 35;
+    let leftY = 75;
+
     ctx.fillStyle = '#8c7b70';
-    ctx.font = `italic 11px ${primarySansFont}`;
-    ctx.fillText('Handcrafted in Cambodia · ផលិតផលប្រណីតកម្ពុជា', w / 2, nextY);
-    nextY += 30;
+    ctx.font = `800 10px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('TRADITIONAL HERITAGE', leftX, leftY);
+    leftY += 20;
 
-    // Ingredients
     ctx.fillStyle = '#5e5148';
     ctx.font = `800 11px ${primarySansFont}`;
-    ctx.fillText('គ្រឿងផ្សំ / INGREDIENTS', w / 2, nextY);
-    nextY += 16;
+    ctx.fillText('គ្រឿងផ្សំ / INGREDIENTS', leftX, leftY);
+    leftY += 16;
 
     ctx.fillStyle = '#4d423a';
     ctx.font = `500 11px ${primaryKhmerFont}`;
     const ingText = ingredients.length > 0
       ? ingredients.map(i => `${i.nameKh || i.name} (${i.percentage || 10}%)`).join(', ')
       : 'មិនមានព័ត៌មានគ្រឿងផ្សំ';
-    wrapText(ctx, ingText, w / 2, nextY, w - 60, 18);
-    nextY += 45;
+    wrapText(ctx, ingText, leftX, leftY, colW - 10, 18, false);
+    leftY += 75;
 
-    // Mini Horizontal Nutrition Fact Table
+    if (allergens.length > 0) {
+      ctx.fillStyle = '#f5efe4';
+      ctx.fillRect(leftX, leftY, colW - 10, 45);
+      ctx.strokeStyle = '#c4b9ad';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(leftX, leftY, colW - 10, 45);
+
+      ctx.fillStyle = '#5c4a3c';
+      ctx.font = `bold 9.5px ${primaryKhmerFont}`;
+      ctx.fillText('ព័ត៌មានអាឡែហ្ស៊ី / Allergen Alert:', leftX + 8, leftY + 16);
+      ctx.font = `500 9px ${primaryKhmerFont}`;
+      wrapText(ctx, allergens.join(', '), leftX + 8, leftY + 30, colW - 26, 14, false);
+      leftY += 60;
+    }
+
+    // Barcode & Net weight in left column
+    drawCanvasBarcode(ctx, barcodeText, leftX + colW/2 - 10, h - 90, 120, 38, true);
+    ctx.fillStyle = '#706459';
+    ctx.font = `bold 10.5px ${primarySansFont}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`NET WT: ${weight || '100g'}`, leftX + colW/2 - 10, h - 35);
+
+
+    // CENTER COLUMN (x from 40 + colW to 40 + 2*colW)
+    const centerX = w / 2;
+    let centerY = 75;
+
+    ctx.fillStyle = '#786c62';
+    ctx.font = `800 10px ${primarySansFont}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('ARTISANAL SPECIFIC', centerX, centerY);
+    centerY += 12;
+
+    ctx.strokeStyle = '#c4b9ad';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 20, centerY);
+    ctx.lineTo(centerX + 20, centerY);
+    ctx.stroke();
+    centerY += 25;
+
+    // Brand Logo Illustration
+    if (logoImgUrl) {
+      const img = await loadImage(logoImgUrl);
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(img, centerX - 50, centerY, 100, 100);
+      ctx.restore();
+      centerY += 115;
+    } else {
+      centerY += 100;
+    }
+
+    // Product Title Khmer
+    ctx.fillStyle = '#3d2e24';
+    ctx.font = `bold 24px ${primaryKhmerFont}`;
+    ctx.fillText(productNameKh, centerX, centerY);
+    centerY += 28;
+
+    // English Subtitle
+    if (productName) {
+      ctx.fillStyle = '#706459';
+      ctx.font = `bold 12px ${primarySansFont}`;
+      ctx.fillText(`— ${productName.toUpperCase()} —`, centerX, centerY);
+      centerY += 22;
+    }
+
+    ctx.fillStyle = '#8c7b70';
+    ctx.font = `800 9px ${primarySansFont}`;
+    ctx.fillText('CAMBODIAN ORIGINAL QUALITY', centerX, centerY);
+
+
+    // RIGHT COLUMN (x from 50 + 2*colW to w - 30)
+    const rightX = w - colW - 35;
+    let rightY = 75;
+
+    // Minimal Nutrition facts border
+    ctx.strokeStyle = '#c4b9ad';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(rightX, rightY, colW, 160);
+
+    ctx.fillStyle = '#5e5148';
+    ctx.fillRect(rightX, rightY, colW, 25);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 10px ${primarySansFont}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Nutrition Facts / តម្លៃអាហារូបត្ថម្ភ', rightX + colW/2, rightY + 16);
+    rightY += 25;
+
+    ctx.fillStyle = '#3d2e24';
+    ctx.font = `bold 9.5px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('Serving Size / ទំហំនៃការបម្រើ:', rightX + 8, rightY + 16);
+    ctx.textAlign = 'right';
+    ctx.fillText(weight || '100g', rightX + colW - 8, rightY + 16);
+    rightY += 22;
+
     ctx.strokeStyle = '#e6dccf';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(30, nextY);
-    ctx.lineTo(w - 30, nextY);
+    ctx.moveTo(rightX, rightY);
+    ctx.lineTo(rightX + colW, rightY);
     ctx.stroke();
-    nextY += 15;
 
-    ctx.fillStyle = '#5e5148';
-    ctx.font = `800 11px ${primarySansFont}`;
-    ctx.fillText('តម្លៃអាហារូបត្ថម្ភ / NUTRITION (100G)', w / 2, nextY);
-    nextY += 15;
-
-    // Grid columns
-    const cols = [
-      { l: 'CAL', v: `${nutrition.calories || 0}` },
-      { l: 'FAT', v: `${nutrition.fat || 0}g` },
-      { l: 'CARB', v: `${nutrition.carbs || 0}g` },
-      { l: 'PROT', v: `${nutrition.protein || 0}g` },
-      { l: 'SOD', v: `${nutrition.sodium || 0}mg` }
+    const rightRows = [
+      { k: 'Calories', v: `${nutrition.calories || 0} kcal`, b: true },
+      { k: 'Total Fat', v: `${nutrition.fat || 0}g` },
+      { k: 'Carbs', v: `${nutrition.carbs || 0}g` },
+      { k: 'Protein', v: `${nutrition.protein || 0}g` },
+      { k: 'Sodium', v: `${nutrition.sodium || 0}mg` }
     ];
-    const colW = (w - 60) / 5;
-    cols.forEach((col, idx) => {
-      const cx = 30 + idx * colW + colW / 2;
-      ctx.fillStyle = '#8c7b70';
-      ctx.font = `800 9px ${primarySansFont}`;
-      ctx.fillText(col.l, cx, nextY);
-      
+
+    rightRows.forEach((r) => {
       ctx.fillStyle = '#3d2e24';
-      ctx.font = `bold 12px ${primarySansFont}`;
-      ctx.fillText(col.v, cx, nextY + 16);
-
-      if (idx < 4) {
-        ctx.strokeStyle = '#ebdcb9';
-        ctx.beginPath();
-        ctx.moveTo(30 + (idx + 1) * colW, nextY - 5);
-        ctx.lineTo(30 + (idx + 1) * colW, nextY + 22);
-        ctx.stroke();
-      }
+      ctx.font = r.b ? `bold 11px ${primarySansFont}` : `500 10.5px ${primarySansFont}`;
+      ctx.textAlign = 'left';
+      ctx.fillText(r.k, rightX + 8, rightY + 15);
+      ctx.textAlign = 'right';
+      ctx.fillText(r.v, rightX + colW - 8, rightY + 15);
+      rightY += 18;
     });
-    nextY += 35;
 
-    ctx.strokeStyle = '#e6dccf';
+    rightY = 255;
+    ctx.strokeStyle = '#ebdcb9';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(30, nextY);
-    ctx.lineTo(w - 30, nextY);
+    ctx.moveTo(rightX, rightY);
+    ctx.lineTo(rightX + colW, rightY);
     ctx.stroke();
-    nextY += 22;
+    rightY += 15;
 
-    // Dates Info grid
     ctx.fillStyle = '#9c8e82';
-    ctx.font = `800 8px ${primarySansFont}`;
-    ctx.fillText('NET WEIGHT', w / 3 - 15, nextY);
-    ctx.fillText('EXPIRY PERIOD', (w / 3) * 2 + 15, nextY);
+    ctx.font = `800 8.5px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('MFG DATE / ថ្ងៃផលិត', rightX, rightY);
+    ctx.textAlign = 'right';
+    ctx.fillText('EXP DATE / ផុតកំណត់', rightX + colW, rightY);
+    rightY += 16;
 
     ctx.fillStyle = '#3d2e24';
-    ctx.font = `bold 12px ${primarySansFont}`;
-    ctx.fillText(weight || '100g', w / 3 - 15, nextY + 16);
-    ctx.fillText(expiry || '6 Months', (w / 3) * 2 + 15, nextY + 16);
-    nextY += 38;
+    ctx.font = `bold 11px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('07/06/2026', rightX, rightY);
+    ctx.textAlign = 'right';
+    ctx.fillText(expiry || '6 Months', rightX + colW, rightY);
+    rightY += 25;
 
     // Warnings
     if (warnings.length > 0) {
-      ctx.fillStyle = '#b91c1c';
-      ctx.font = `bold 10px ${primaryKhmerFont}`;
-      ctx.fillText(`* ${warnings.join('. ')}`, w / 2, nextY);
-      nextY += 22;
+      ctx.fillStyle = '#991b1b';
+      ctx.font = `bold 9.5px ${primaryKhmerFont}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(warnings.join('. '), rightX + colW/2, rightY);
+      rightY += 22;
     }
 
-    // Barcode
-    drawCanvasBarcode(ctx, barcodeText, w / 2, nextY, 130, 40);
+    // Environmental icons
+    ctx.fillStyle = '#8c7b70';
+    ctx.font = `14px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('♻️ 🚯 🍽️', rightX + 5, h - 40);
 
   } else if (templateType === 'panel') {
-    // --- 2. BACK COMPLIANCE PANEL ---
+    // --- 2. BACK COMPLIANCE PANEL (STAYS VERTICAL PORTRAIT AS DESIGNED) ---
     ctx.fillStyle = '#f8fafc'; // slate-50
     ctx.fillRect(0, 0, w, h);
 
@@ -344,18 +415,17 @@ export async function drawLabel2D(canvas, labelData, productName, weight, expiry
     drawCanvasBarcode(ctx, barcodeText, w - 100, nextY, 90, 35, false);
 
   } else {
-    // --- 3. POPULAR DUPLEX POUCH LABEL (DEFAULT) ---
-    // Background color
+    // --- 3. POPULAR DUPLEX POUCH LABEL (3-COLUMN DESIGN) ---
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
 
     // Borders
     ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
     ctx.strokeRect(10, 10, w - 20, h - 20);
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(16, 16, w - 32, h - 32);
+    ctx.strokeRect(18, 18, w - 36, h - 36);
 
     // Accent Orange/Amber top band
     const grad = ctx.createLinearGradient(0, 0, w, 0);
@@ -363,98 +433,151 @@ export async function drawLabel2D(canvas, labelData, productName, weight, expiry
     grad.addColorStop(0.5, '#ea580c');
     grad.addColorStop(1, '#f59e0b');
     ctx.fillStyle = grad;
-    ctx.fillRect(18, 18, w - 36, 15);
+    ctx.fillRect(20, 20, w - 40, 20);
 
-    // Header Content
+    // Dynamic wave pattern in background (opacity 0.03)
+    ctx.save();
+    ctx.globalAlpha = 0.03;
+    ctx.fillStyle = '#f59e0b';
+    for (let r = 0; r < h; r += 24) {
+      for (let c = 0; c < w; c += 24) {
+        ctx.beginPath();
+        ctx.arc(c + 12, r + 12, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    const colW = (w - 80) / 3;
+
+    // LEFT COLUMN (x from 30 to 30 + colW)
+    const leftX = 35;
+    let leftY = 75;
+
     ctx.fillStyle = '#64748b';
-    ctx.font = `800 10px ${primarySansFont}`;
-    ctx.textAlign = 'center';
-    ctx.fillText('PACKCO COMPLIANCE', w / 2, 52);
+    ctx.font = `800 11px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('PRODUCT OF CAMBODIA', leftX, leftY);
+    leftY += 20;
 
-    let nextY = 75;
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `800 12px ${primarySansFont}`;
+    ctx.fillText('គ្រឿងផ្សំ / INGREDIENTS', leftX, leftY);
+    leftY += 16;
+
+    ctx.fillStyle = '#334155';
+    ctx.font = `500 12px ${primaryKhmerFont}`;
+    const ingText = ingredients.length > 0
+      ? ingredients.map(i => `${i.nameKh || i.name} (${i.percentage || 10}%)`).join(', ')
+      : 'មិនមានព័ត៌មានគ្រឿងផ្សំ';
+    wrapText(ctx, ingText, leftX, leftY, colW - 10, 18, false);
+    leftY += 75;
+
+    if (allergens.length > 0) {
+      ctx.fillStyle = '#fffbeb';
+      ctx.fillRect(leftX, leftY, colW - 10, 45);
+      ctx.strokeStyle = '#fef3c7';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(leftX, leftY, colW - 10, 45);
+
+      ctx.fillStyle = '#78350f';
+      ctx.font = `bold 10px ${primaryKhmerFont}`;
+      ctx.fillText('ព័ត៌មានអាឡែហ្ស៊ី / Allergen Alert:', leftX + 8, leftY + 16);
+      ctx.font = `500 9px ${primaryKhmerFont}`;
+      wrapText(ctx, allergens.join(', '), leftX + 8, leftY + 30, colW - 26, 14, false);
+      leftY += 60;
+    }
+
+    // Barcode at bottom of Left Column
+    drawCanvasBarcode(ctx, barcodeText, leftX + colW/2 - 10, h - 90, 120, 38, true);
+    ctx.fillStyle = '#334155';
+    ctx.font = `bold 11px ${primarySansFont}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`NET WT: ${weight || '100g'}`, leftX + colW/2 - 10, h - 35);
+
+
+    // CENTER COLUMN (x from 40 + colW to 40 + 2*colW)
+    const centerX = w / 2;
+    let centerY = 75;
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = `800 11px ${primarySansFont}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('KHMER CO-OP', centerX, centerY);
+    centerY += 12;
+
+    ctx.strokeStyle = '#ea580c';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 20, centerY);
+    ctx.lineTo(centerX + 20, centerY);
+    ctx.stroke();
+    centerY += 25;
 
     // Logo image if active
     if (logoImgUrl) {
       const img = await loadImage(logoImgUrl);
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
-      ctx.drawImage(img, w / 2 - 35, nextY, 70, 70);
+      ctx.drawImage(img, centerX - 50, centerY, 100, 100);
       ctx.restore();
-      nextY += 80;
+      centerY += 115;
+    } else {
+      centerY += 100;
     }
 
     // Product Title Khmer
     ctx.fillStyle = '#0f172a';
-    ctx.font = `bold 24px ${primaryKhmerFont}`;
-    ctx.fillText(productNameKh, w / 2, nextY);
-    nextY += 26;
+    ctx.font = `bold 26px ${primaryKhmerFont}`;
+    ctx.fillText(productNameKh, centerX, centerY);
+    centerY += 30;
 
     // Subtitle English
     if (productName) {
       ctx.fillStyle = '#475569';
-      ctx.font = `italic 12px ${primarySansFont}`;
-      ctx.fillText(productName, w / 2, nextY);
-      nextY += 20;
+      ctx.font = `bold 14px ${primarySansFont}`;
+      ctx.fillText(productName.toUpperCase(), centerX, centerY);
+      centerY += 22;
     }
 
-    // Origin Badge
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(30, nextY, w - 60, 22);
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(30, nextY, w - 60, 22);
-    
-    ctx.fillStyle = '#334155';
-    ctx.font = `bold 9.5px ${primaryKhmerFont}`;
-    ctx.fillText('ផលិតផលខ្មែរ / Product of Cambodia', w / 2, nextY + 14);
-    nextY += 38;
+    ctx.fillStyle = '#ea580c';
+    ctx.font = `800 10px ${primarySansFont}`;
+    ctx.fillText('GUT FRIENDLY · 100% ORGANIC', centerX, centerY);
 
-    // Bilingual Nutrition Panel
+
+    // RIGHT COLUMN (x from 50 + 2*colW to w - 30)
+    const rightX = w - colW - 35;
+    let rightY = 75;
+
+    // Bilingual Nutrition Facts Box
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 2;
-    ctx.strokeRect(30, nextY, w - 60, 155);
+    ctx.strokeRect(rightX, rightY, colW, 160);
 
-    // Box Header
     ctx.fillStyle = '#0f172a';
-    ctx.fillRect(30, nextY, w - 60, 24);
+    ctx.fillRect(rightX, rightY, colW, 25);
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold 10px ${primaryKhmerFont}`;
-    ctx.fillText('ព័ត៌មានអាហារូបត្ថម្ភ / Nutrition Facts', w / 2, nextY + 16);
-    nextY += 24;
+    ctx.font = `bold 11px ${primaryKhmerFont}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('ព័ត៌មានអាហារូបត្ថម្ភ / Nutrition Facts', rightX + colW/2, rightY + 16);
+    rightY += 25;
 
-    // Serving Size
     ctx.fillStyle = '#0f172a';
-    ctx.font = `bold 9px ${primarySansFont}`;
+    ctx.font = `bold 9.5px ${primarySansFont}`;
     ctx.textAlign = 'left';
-    ctx.fillText('ទំហំនៃការបម្រើ / Serving Size:', 38, nextY + 15);
+    ctx.fillText('Serving Size / ទំហំនៃការបម្រើ:', rightX + 8, rightY + 16);
     ctx.textAlign = 'right';
-    ctx.fillText(weight || '100g', w - 38, nextY + 15);
-    nextY += 22;
+    ctx.fillText(weight || '100g', rightX + colW - 8, rightY + 16);
+    rightY += 22;
 
     ctx.strokeStyle = '#475569';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(30, nextY);
-    ctx.lineTo(w - 30, nextY);
+    ctx.moveTo(rightX, rightY);
+    ctx.lineTo(rightX + colW, rightY);
     ctx.stroke();
 
-    // Table Headings
-    ctx.fillStyle = '#64748b';
-    ctx.font = `800 8px ${primarySansFont}`;
-    ctx.textAlign = 'left';
-    ctx.fillText('សារធាតុចិញ្ចឹម / NUTRIENTS', 38, nextY + 11);
-    ctx.textAlign = 'right';
-    ctx.fillText('បរិមាណ / AMOUNT', w - 38, nextY + 11);
-    nextY += 16;
-
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.beginPath();
-    ctx.moveTo(30, nextY);
-    ctx.lineTo(w - 30, nextY);
-    ctx.stroke();
-
-    // Nutrients values
-    const pouchRows = [
+    const rightRows = [
       { k: 'ថាមពល / Calories', v: `${nutrition.calories || 0} kcal`, b: true },
       { k: 'ជាតិខ្លាញ់សរុប / Total Fat', v: `${nutrition.fat || 0}g` },
       { k: 'កាបូអ៊ីដ្រាត / Carbs', v: `${nutrition.carbs || 0}g` },
@@ -462,86 +585,55 @@ export async function drawLabel2D(canvas, labelData, productName, weight, expiry
       { k: 'សូដ្យូម / Sodium', v: `${nutrition.sodium || 0}mg` }
     ];
 
-    pouchRows.forEach((r, idx) => {
+    rightRows.forEach((r) => {
       ctx.fillStyle = '#0f172a';
       ctx.font = r.b ? `bold 11px ${primarySansFont}` : `500 10.5px ${primarySansFont}`;
-      
       ctx.textAlign = 'left';
-      ctx.fillText(r.k, 38, nextY + 15);
-      
+      ctx.fillText(r.k, rightX + 8, rightY + 15);
       ctx.textAlign = 'right';
-      ctx.fillText(r.v, w - 38, nextY + 15);
-
-      nextY += 18;
-      if (idx < 4) {
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.beginPath();
-        ctx.moveTo(30, nextY);
-        ctx.lineTo(w - 30, nextY);
-        ctx.stroke();
-      }
+      ctx.fillText(r.v, rightX + colW - 8, rightY + 15);
+      rightY += 18;
     });
-    nextY += 15;
 
-    // Ingredients
-    ctx.fillStyle = '#334155';
-    ctx.font = `800 10px ${primarySansFont}`;
-    ctx.textAlign = 'left';
-    ctx.fillText('គ្រឿងផ្សំ / INGREDIENTS', 30, nextY);
-    nextY += 14;
-
-    ctx.fillStyle = '#334155';
-    ctx.font = `500 11px ${primaryKhmerFont}`;
-    const ingText = ingredients.length > 0
-      ? ingredients.map(i => `${i.nameKh || i.name} (${i.percentage || 10}%)`).join(', ')
-      : 'មិនមានព័ត៌មានគ្រឿងផ្សំ';
-    wrapText(ctx, ingText, 30, nextY, w - 60, 16, false);
-    nextY += 35;
-
-    // Dates
+    rightY = 255;
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(30, nextY);
-    ctx.lineTo(w - 30, nextY);
+    ctx.moveTo(rightX, rightY);
+    ctx.lineTo(rightX + colW, rightY);
     ctx.stroke();
-    nextY += 12;
+    rightY += 15;
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = `800 8px ${primarySansFont}`;
-    ctx.fillText('MFG DATE / ថ្ងៃផលិត', 30, nextY);
-    ctx.fillText('EXP DATE / កាលបរិច្ឆេទផុតកំណត់', w / 2 + 10, nextY);
+    ctx.font = `800 9px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('MFG DATE / ថ្ងៃផលិត', rightX, rightY);
+    ctx.textAlign = 'right';
+    ctx.fillText('EXP DATE / ផុតកំណត់', rightX + colW, rightY);
+    rightY += 16;
 
     ctx.fillStyle = '#0f172a';
     ctx.font = `bold 11px ${primarySansFont}`;
-    ctx.fillText('07/06/2026', 30, nextY + 15);
-    ctx.fillText(expiry || '6 Months', w / 2 + 10, nextY + 15);
-    nextY += 30;
-
-    // Allergen warnings
-    if (allergens.length > 0) {
-      ctx.fillStyle = '#fffbeb'; // amber-50
-      ctx.fillRect(30, nextY, w - 60, 28);
-      ctx.strokeStyle = '#fef3c7'; // amber-100
-      ctx.strokeRect(30, nextY, w - 60, 28);
-      
-      ctx.fillStyle = '#78350f'; // amber-900
-      ctx.font = `bold 9.5px ${primaryKhmerFont}`;
-      ctx.fillText(`ព័ត៌មានអាឡែហ្ស៊ី: ${allergens.join(', ')}`, 35, nextY + 18);
-      nextY += 38;
-    }
+    ctx.textAlign = 'left';
+    ctx.fillText('07/06/2026', rightX, rightY);
+    ctx.textAlign = 'right';
+    ctx.fillText(expiry || '6 Months', rightX + colW, rightY);
+    rightY += 25;
 
     // Warnings
     if (warnings.length > 0) {
       ctx.fillStyle = '#dc2626';
       ctx.font = `bold 10px ${primaryKhmerFont}`;
       ctx.textAlign = 'center';
-      ctx.fillText(warnings.join('. '), w / 2, nextY);
-      nextY += 20;
+      ctx.fillText(warnings.join('. '), rightX + colW/2, rightY);
+      rightY += 22;
     }
 
-    // Barcode
-    drawCanvasBarcode(ctx, barcodeText, w / 2, nextY, 130, 42);
+    // Environmental icons
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `14px ${primarySansFont}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('♻️ 🚯 🍽️', rightX + 5, h - 40);
   }
 }
 
