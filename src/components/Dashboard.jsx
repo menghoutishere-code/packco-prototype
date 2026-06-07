@@ -13,8 +13,8 @@ export default function Dashboard({ onLogout }) {
   const [barcodeText, setBarcodeText] = useState('8841234567890');
   const [inputLanguage, setInputLanguage] = useState('en'); // 'en' or 'km'
   const [activeTemplate, setActiveTemplate] = useState('pouch'); // 'pouch', 'kraft', 'panel'
-  const [isEconomicsOpen, setIsEconomicsOpen] = useState(false);
-
+  const [isEconomicsOpen, setIsEconomicsOpen] = useState(true); // Open by default to show details
+  const [isLiabilityChecked, setIsLiabilityChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [nutritionInput, setNutritionInput] = useState({
     calories: 340,
@@ -335,7 +335,9 @@ export default function Dashboard({ onLogout }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-300">GS1 Barcode Value (EAN-13)</label>
+              <label className="text-xs font-bold text-slate-300">
+                {inputLanguage === 'km' ? 'តម្លៃបារកូដ GS1 (EAN-13 សម្រាប់ទីតាំង/FPO)' : 'GS1 Barcode (EAN-13 Placeholder / FPO)'}
+              </label>
               <input 
                 type="text" 
                 value={barcodeText}
@@ -407,10 +409,31 @@ export default function Dashboard({ onLogout }) {
               </span>
             </div>
 
+            {/* Maker Liability Checkbox */}
+            <div className="flex items-start gap-2 border-t border-white/5 pt-3 mt-1">
+              <input 
+                type="checkbox" 
+                id="liability-checkbox"
+                checked={isLiabilityChecked}
+                onChange={(e) => setIsLiabilityChecked(e.target.checked)}
+                className="mt-1 rounded bg-navy border-white/10 text-amber-500 focus:ring-amber-500 cursor-pointer"
+              />
+              <label htmlFor="liability-checkbox" className="text-[10px] text-slate-400 leading-snug cursor-pointer select-none">
+                {inputLanguage === 'km' 
+                  ? 'ខ្ញុំបញ្ជាក់ថា គ្រឿងផ្សំ និងទម្ងន់គឺត្រឹមត្រូវ។ ទំនួលខុសត្រូវចុងក្រោយសម្រាប់ការអនុលោមតាមសេចក្តីសម្រេច ១១២ គឺស្ថិតនៅលើសហគ្រាសផលិត។'
+                  : 'I verify that ingredients, allergens, and weights are correct. Final compliance sign-off under Sub-Decree 112 rests with the producer.'
+                }
+              </label>
+            </div>
+
             <button 
               onClick={handleGenerate}
-              disabled={isLoading}
-              className="mt-2 w-full py-3 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white font-bold shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
+              disabled={isLoading || !isLiabilityChecked}
+              className={`mt-2 w-full py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 text-sm ${
+                isLiabilityChecked 
+                  ? 'bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white shadow-amber-500/20' 
+                  : 'bg-white/5 text-slate-500 cursor-not-allowed border border-white/5'
+              }`}
             >
               {isLoading ? (
                 <>
@@ -447,12 +470,20 @@ export default function Dashboard({ onLogout }) {
                   <span className="font-bold text-white">$0.25 / unit</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
+                  <span className="text-slate-400">Local Delivery (Flat Grab Rate):</span>
+                  <span className="font-bold text-slate-300">$1.50 / order</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-400">PackCo Platform Margin:</span>
                   <span className="font-bold text-amber-500">36% ($0.09)</span>
                 </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Scheduled Printing Drop:</span>
+                  <span className="font-bold text-orange-400">15th & 30th Monthly</span>
+                </div>
                 
                 <div className="p-2.5 rounded-lg bg-green-500/5 border border-green-500/10 text-[10px] text-green-400 leading-normal">
-                  <strong>Co-op Savings:</strong> Pooling print volumes saves makers ~38% compared to custom small-batch runs.
+                  <strong>Batch Drop Model:</strong> Pre-order slots to lock into the upcoming scheduled print drop. Flat delivery covered by the maker.
                 </div>
               </div>
             )}
