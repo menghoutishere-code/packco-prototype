@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LabelTemplatePanel({ labelData, productName, weight, expiry, barcodeRef }) {
+export default function LabelTemplatePanel({ labelData, productName, weight, expiry }) {
   const nutrition = labelData.nutritionFacts || {};
   const ingredients = labelData.ingredients || [];
   const allergens = labelData.allergensKh || [];
@@ -101,7 +101,7 @@ export default function LabelTemplatePanel({ labelData, productName, weight, exp
           <span title="Keep Clean" className="text-xs">🚯</span>
           <span title="Food Safe" className="text-xs">🍽️</span>
         </div>
-        <svg ref={barcodeRef} className="max-h-[40px] max-w-full grow"></svg>
+        <svg className="barcode-svg max-h-[40px] max-w-full grow"></svg>
       </div>
     </div>
   );

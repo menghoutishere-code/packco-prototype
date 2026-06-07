@@ -21,13 +21,19 @@
 
 /* Print-specific layout rules to export the label clean and header-free */
 @media print {
+  /* Force exact colors to print background colors and images */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Completely hide all non-printing layout elements from the document flow */
   .no-print, .no-print * {
     display: none !important;
   }
   
-  body, html, div {
-    background-color: transparent !important;
+  body, html {
+    background-color: white !important;
     color: black !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -45,15 +51,12 @@
     margin: 0 !important;
     padding: 20px !important;
     box-shadow: none !important;
-    background-color: white !important;
-    color: black !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    border: 2px solid black !important;
   }
 
   @page {
-    size: auto;
+    size: 80mm auto;
     margin: 0mm;
   }
 }

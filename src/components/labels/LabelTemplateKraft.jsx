@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LabelTemplateKraft({ labelData, productName, weight, expiry, barcodeRef }) {
+export default function LabelTemplateKraft({ labelData, productName, weight, expiry }) {
   const nutrition = labelData.nutritionFacts || {};
   const ingredients = labelData.ingredients || [];
   const allergens = labelData.allergensKh || [];
@@ -98,7 +98,7 @@ export default function LabelTemplateKraft({ labelData, productName, weight, exp
 
       {/* Barcode Section */}
       <div className="flex justify-center mt-1 relative z-10">
-        <svg ref={barcodeRef} className="max-h-[45px] max-w-full opacity-85 mix-blend-multiply"></svg>
+        <svg className="barcode-svg max-h-[45px] max-w-full opacity-85 mix-blend-multiply"></svg>
       </div>
     </div>
   );

@@ -43,8 +43,6 @@ export default function Dashboard({ onLogout }) {
     mandatoryWarningsKh: ['រក្សាទុកក្នុងកន្លែងត្រជាក់និងស្ងួត']
   });
 
-  const barcodeRef = useRef(null);
-
   // Sync local nutrition inputs when labelData changes from API
   useEffect(() => {
     if (labelData && labelData.nutritionFacts) {
@@ -73,33 +71,42 @@ export default function Dashboard({ onLogout }) {
 
   // Render barcode whenever barcodeText or activeTemplate changes
   useEffect(() => {
-    if (barcodeRef.current && barcodeText) {
-      try {
-        JsBarcode(barcodeRef.current, barcodeText, {
-          format: "EAN13",
-          width: 1.2,
-          height: 35,
-          displayValue: true,
-          fontSize: 9,
-          margin: 0,
-          background: "transparent"
+    const renderBarcodes = () => {
+      const els = document.querySelectorAll('.barcode-svg');
+      if (els.length > 0 && barcodeText) {
+        els.forEach(el => {
+          try {
+            JsBarcode(el, barcodeText, {
+              format: "EAN13",
+              width: 1.2,
+              height: 35,
+              displayValue: true,
+              fontSize: 9,
+              margin: 0,
+              background: "transparent"
+            });
+          } catch (err) {
+            try {
+              JsBarcode(el, barcodeText, {
+                format: "CODE128",
+                width: 1.2,
+                height: 35,
+                displayValue: true,
+                fontSize: 9,
+                margin: 0,
+                background: "transparent"
+              });
+            } catch (e) {
+              console.error("Barcode rendering failed", e);
+            }
+          }
         });
-      } catch (err) {
-        try {
-          JsBarcode(barcodeRef.current, barcodeText, {
-            format: "CODE128",
-            width: 1.2,
-            height: 35,
-            displayValue: true,
-            fontSize: 9,
-            margin: 0,
-            background: "transparent"
-          });
-        } catch (e) {
-          console.error("Barcode rendering failed", e);
-        }
       }
-    }
+    };
+
+    renderBarcodes();
+    const timer = setTimeout(renderBarcodes, 50);
+    return () => clearTimeout(timer);
   }, [barcodeText, labelData, activeTemplate]);
 
   // Adjust placeholder suggestions based on input language
@@ -216,8 +223,7 @@ export default function Dashboard({ onLogout }) {
       labelData,
       productName,
       weight,
-      expiry,
-      barcodeRef
+      expiry
     };
 
     switch (activeTemplate) {

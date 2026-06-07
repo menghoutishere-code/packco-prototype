@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LabelTemplatePouch({ labelData, productName, weight, expiry, barcodeRef }) {
+export default function LabelTemplatePouch({ labelData, productName, weight, expiry }) {
   const nutrition = labelData.nutritionFacts || {};
   const ingredients = labelData.ingredients || [];
   const allergens = labelData.allergensKh || [];
@@ -110,7 +110,7 @@ export default function LabelTemplatePouch({ labelData, productName, weight, exp
 
       {/* Barcode Section */}
       <div className="border-t border-slate-200 pt-3 flex flex-col items-center">
-        <svg ref={barcodeRef} className="max-h-[50px] max-w-full"></svg>
+        <svg className="barcode-svg max-h-[50px] max-w-full"></svg>
       </div>
     </div>
   );
