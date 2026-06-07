@@ -21,25 +21,35 @@
 
 /* Print-specific layout rules to export the label clean and header-free */
 @media print {
-  body * {
-    visibility: hidden;
+  /* Completely hide all non-printing layout elements from the document flow */
+  .no-print, .no-print * {
+    display: none !important;
   }
   
-  .label-print-container, .label-print-container * {
-    visibility: visible;
+  body, html, div {
+    background-color: transparent !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   
   .label-print-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    margin: 0;
-    padding: 0;
-    border: none !important;
+    display: flex !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 20px !important;
     box-shadow: none !important;
     background-color: white !important;
     color: black !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 2px solid black !important;
   }
 
   @page {
