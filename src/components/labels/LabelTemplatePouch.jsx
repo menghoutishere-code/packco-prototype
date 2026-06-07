@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LabelTemplatePouch({ labelData, productName, weight, expiry }) {
+export default function LabelTemplatePouch({ labelData, productName, weight, expiry, customLogoSvg, customLogoUrl }) {
   const nutrition = labelData.nutritionFacts || {};
   const ingredients = labelData.ingredients || [];
   const allergens = labelData.allergensKh || [];
@@ -14,6 +14,18 @@ export default function LabelTemplatePouch({ labelData, productName, weight, exp
       {/* Brand Header */}
       <div className="text-center mt-2 border-b-2 border-slate-900 pb-2">
         <div className="text-[10px] tracking-[0.2em] uppercase text-slate-500 font-extrabold">PACKCO COMPLIANCE</div>
+        
+        {/* Brand Logo Element (custom or default) */}
+        {(customLogoSvg || customLogoUrl) && (
+          <div className="flex justify-center items-center my-2 max-h-[60px] overflow-hidden">
+            {customLogoSvg ? (
+              <div className="w-14 h-14 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: customLogoSvg }} />
+            ) : (
+              <img src={customLogoUrl} alt="Brand Logo" className="w-14 h-14 object-contain mix-blend-multiply" />
+            )}
+          </div>
+        )}
+
         <h1 className="text-xl font-black font-khmer text-slate-950 mt-1 leading-tight tracking-normal">
           {labelData.productNameKh || labelData.productNameKhmer || 'ឈ្មោះផលិតផល'}
         </h1>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LabelTemplateKraft({ labelData, productName, weight, expiry }) {
+export default function LabelTemplateKraft({ labelData, productName, weight, expiry, customLogoSvg, customLogoUrl }) {
   const nutrition = labelData.nutritionFacts || {};
   const ingredients = labelData.ingredients || [];
   const allergens = labelData.allergensKh || [];
@@ -14,6 +14,18 @@ export default function LabelTemplateKraft({ labelData, productName, weight, exp
       {/* Brand Header */}
       <div className="text-center pb-2 border-b border-[#ebdcb9] relative z-10">
         <div className="text-[9px] tracking-[0.25em] text-[#786c62] uppercase font-bold">ARTISANAL HERITAGE</div>
+        
+        {/* Brand Logo Element (custom or default) */}
+        {(customLogoSvg || customLogoUrl) && (
+          <div className="flex justify-center items-center my-2 max-h-[60px] overflow-hidden">
+            {customLogoSvg ? (
+              <div className="w-14 h-14 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: customLogoSvg }} />
+            ) : (
+              <img src={customLogoUrl} alt="Brand Logo" className="w-14 h-14 object-contain mix-blend-multiply" />
+            )}
+          </div>
+        )}
+
         <h1 className="text-2xl font-normal font-khmer text-[#3d2e24] mt-2 leading-tight">
           {labelData.productNameKh || labelData.productNameKhmer || 'ឈ្មោះផលិតផល'}
         </h1>

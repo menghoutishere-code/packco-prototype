@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LabelTemplatePanel({ labelData, productName, weight, expiry }) {
+export default function LabelTemplatePanel({ labelData, productName, weight, expiry, customLogoSvg, customLogoUrl }) {
   const nutrition = labelData.nutritionFacts || {};
   const ingredients = labelData.ingredients || [];
   const allergens = labelData.allergensKh || [];
@@ -10,6 +10,17 @@ export default function LabelTemplatePanel({ labelData, productName, weight, exp
     <div className="w-full max-w-[320px] bg-slate-50 text-slate-900 p-5 border border-slate-300 rounded shadow-2xl flex flex-col gap-4 font-sans select-none label-print-container">
       {/* Title Panel Banner */}
       <div className="bg-slate-800 text-white p-2 text-center rounded">
+        {/* Brand Logo Element (custom or default) */}
+        {(customLogoSvg || customLogoUrl) && (
+          <div className="flex justify-center items-center my-1.5 max-h-[50px] overflow-hidden">
+            {customLogoSvg ? (
+              <div className="w-11 h-11 flex items-center justify-center bg-white p-1 rounded" dangerouslySetInnerHTML={{ __html: customLogoSvg }} />
+            ) : (
+              <img src={customLogoUrl} alt="Brand Logo" className="w-11 h-11 object-contain bg-white p-1 rounded" />
+            )}
+          </div>
+        )}
+
         <h1 className="text-base font-bold font-khmer leading-snug">
           {labelData.productNameKh || labelData.productNameKhmer || 'ឈ្មោះផលិតផល'}
         </h1>

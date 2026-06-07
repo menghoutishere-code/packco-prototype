@@ -4,6 +4,8 @@ import { LogOut, RefreshCw, FileDown, AlertTriangle, Layers, Check, Globe, Layou
 import LabelTemplatePouch from './labels/LabelTemplatePouch';
 import LabelTemplateKraft from './labels/LabelTemplateKraft';
 import LabelTemplatePanel from './labels/LabelTemplatePanel';
+import LogoStudio from './LogoStudio';
+import MockupStudio from './MockupStudio';
 
 export default function Dashboard({ onLogout }) {
   const [productName, setProductName] = useState('Dried Spicy Mango');
@@ -42,6 +44,16 @@ export default function Dashboard({ onLogout }) {
     allergensKh: [],
     mandatoryWarningsKh: ['រក្សាទុកក្នុងកន្លែងត្រជាក់និងស្ងួត']
   });
+
+  const [activeTab, setActiveTab] = useState('label'); // 'label', 'logo', 'mockup'
+  const [customLogoSvg, setCustomLogoSvg] = useState(null);
+  const [customLogoUrl, setCustomLogoUrl] = useState(null);
+
+  const handleApplyLogo = (svgCode, imgUrl) => {
+    setCustomLogoSvg(svgCode);
+    setCustomLogoUrl(imgUrl);
+    setActiveTab('label');
+  };
 
   // Sync local nutrition inputs when labelData changes from API
   useEffect(() => {
@@ -223,7 +235,9 @@ export default function Dashboard({ onLogout }) {
       labelData,
       productName,
       weight,
-      expiry
+      expiry,
+      customLogoSvg,
+      customLogoUrl
     };
 
     switch (activeTemplate) {
@@ -257,8 +271,46 @@ export default function Dashboard({ onLogout }) {
         </div>
       </header>
 
-      {/* Main Layout */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 no-print">
+      {/* Tab Navigation */}
+      <div className="bg-navy/40 border-b border-white/5 no-print">
+        <div className="max-w-7xl mx-auto px-6 flex gap-1">
+          <button
+            onClick={() => setActiveTab('label')}
+            className={`px-5 py-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'label'
+                ? 'border-amber-500 text-amber-500 bg-white/5'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layout size={14} /> Label Studio
+          </button>
+          <button
+            onClick={() => setActiveTab('logo')}
+            className={`px-5 py-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'logo'
+                ? 'border-amber-500 text-amber-500 bg-white/5'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sparkles size={14} /> Brand Logo Studio
+          </button>
+          <button
+            onClick={() => setActiveTab('mockup')}
+            className={`px-5 py-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'mockup'
+                ? 'border-amber-500 text-amber-500 bg-white/5'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layers size={14} /> 3D Mockup Studio
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 no-print">
+        {activeTab === 'label' && (
+          <main className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column: Input Panel (1/3 size - lg:col-span-4) */}
         <section className="lg:col-span-4 flex flex-col gap-6 text-left">
@@ -554,7 +606,28 @@ export default function Dashboard({ onLogout }) {
           </div>
         </section>
 
-      </main>
+          </main>
+        )}
+
+        {activeTab === 'logo' && (
+          <LogoStudio 
+            productName={productName} 
+            onApplyLogo={handleApplyLogo} 
+          />
+        )}
+
+        {activeTab === 'mockup' && (
+          <MockupStudio 
+            labelData={labelData} 
+            productName={productName} 
+            weight={weight} 
+            expiry={expiry} 
+            barcodeText={barcodeText} 
+            activeTemplate={activeTemplate} 
+            customLogoUrl={customLogoUrl || customLogoSvg}
+          />
+        )}
+      </div>
 
       {/* Hidden print container for high-quality export */}
       <div className="hidden print:block">
