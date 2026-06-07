@@ -16,6 +16,14 @@ export default function Dashboard({ onLogout }) {
   const [isEconomicsOpen, setIsEconomicsOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [nutritionInput, setNutritionInput] = useState({
+    calories: 340,
+    fat: 1.2,
+    carbs: 82.0,
+    protein: 1.5,
+    sodium: 180
+  });
+
   const [labelData, setLabelData] = useState({
     productNameKh: 'ស្វាយសម្ងួតហឹរ',
     ingredients: [
@@ -36,6 +44,32 @@ export default function Dashboard({ onLogout }) {
   });
 
   const barcodeRef = useRef(null);
+
+  // Sync local nutrition inputs when labelData changes from API
+  useEffect(() => {
+    if (labelData && labelData.nutritionFacts) {
+      setNutritionInput({
+        calories: labelData.nutritionFacts.calories || 0,
+        fat: labelData.nutritionFacts.fat || 0,
+        carbs: labelData.nutritionFacts.carbs || 0,
+        protein: labelData.nutritionFacts.protein || 0,
+        sodium: labelData.nutritionFacts.sodium || 0
+      });
+    }
+  }, [labelData]);
+
+  // Sync changes to nutritionInput back to labelData so templates update in real time
+  const handleNutritionChange = (key, val) => {
+    const numericVal = parseFloat(val) || 0;
+    setNutritionInput(prev => ({ ...prev, [key]: val }));
+    setLabelData(prev => ({
+      ...prev,
+      nutritionFacts: {
+        ...prev.nutritionFacts,
+        [key]: numericVal
+      }
+    }));
+  };
 
   // Render barcode whenever barcodeText or activeTemplate changes
   useEffect(() => {
@@ -308,6 +342,69 @@ export default function Dashboard({ onLogout }) {
                 onChange={(e) => setBarcodeText(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-navy/50 border border-white/5 focus:border-amber-500/40 text-white text-sm outline-none transition-all"
               />
+            </div>
+
+            {/* Nutrition Inputs */}
+            <div className="flex flex-col gap-2 border-t border-white/5 pt-3">
+              <label className="text-xs font-bold text-slate-300">
+                {inputLanguage === 'km' ? 'តម្លៃអាហារូបត្ថម្ភ (ក្នុង ១០០ក្រាម)' : 'Nutrition Facts (per 100g)'}
+              </label>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-slate-400">Calories (kcal)</span>
+                  <input 
+                    type="number" 
+                    value={nutritionInput.calories} 
+                    onChange={(e) => handleNutritionChange('calories', e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded bg-navy/50 border border-white/5 text-white text-xs outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-slate-400">Sodium (mg)</span>
+                  <input 
+                    type="number" 
+                    value={nutritionInput.sodium} 
+                    onChange={(e) => handleNutritionChange('sodium', e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded bg-navy/50 border border-white/5 text-white text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-slate-400">Fat (g)</span>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={nutritionInput.fat} 
+                    onChange={(e) => handleNutritionChange('fat', e.target.value)}
+                    className="w-full px-2 py-1.5 rounded bg-navy/50 border border-white/5 text-white text-xs outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-slate-400">Carbs (g)</span>
+                  <input 
+                    type="number" 
+                    value={nutritionInput.carbs} 
+                    onChange={(e) => handleNutritionChange('carbs', e.target.value)}
+                    className="w-full px-2 py-1.5 rounded bg-navy/50 border border-white/5 text-white text-xs outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-slate-400">Protein (g)</span>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={nutritionInput.protein} 
+                    onChange={(e) => handleNutritionChange('protein', e.target.value)}
+                    className="w-full px-2 py-1.5 rounded bg-navy/50 border border-white/5 text-white text-xs outline-none"
+                  />
+                </div>
+              </div>
+              <span className="text-[9px] text-slate-500 italic mt-0.5">
+                * Automatically estimated by AI based on ingredients. You can manually adjust values here.
+              </span>
             </div>
 
             <button 
