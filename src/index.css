@@ -40,6 +40,12 @@
     height: auto !important;
     overflow: visible !important;
   }
+
+  /* Reset backgrounds of all wrapper elements outside the label container */
+  :not(.label-print-container):not(.label-print-container *) {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
   
   .label-print-container {
     display: flex !important;
