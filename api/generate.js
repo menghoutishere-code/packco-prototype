@@ -39,6 +39,7 @@ export default async function handler(req, res) {
     - Keep the product name and ingredients in Khmer, but correct any spelling errors or awkward phrasing to ensure professional compliance.
     
     For both input languages:
+    - Also provide "productNameEn": the product name written in English (translate from the Khmer if the input was Khmer; otherwise use the original English name). Use Latin letters only — never Khmer script.
     - Structure the ingredients in descending order of weight percentage.
     - Calculate estimated nutrition facts (Calories, Fat, Carbs, Protein, Sodium) per 100g based on standard guidelines.
     - Output the specific mandatory warning phrase: "រក្សាទុកក្នុងកន្លែងត្រជាក់និងស្ងួត" (Store in a cool, dry place) under mandatoryWarningsKh.
@@ -47,6 +48,7 @@ export default async function handler(req, res) {
     Respond ONLY with a JSON object following this exact schema:
     {
       "productNameKh": "Translated or refined Khmer Product Name",
+      "productNameEn": "Product name in English (Latin letters only)",
       "ingredients": [
         { "nameKh": "Ingredient name in Khmer", "percentage": 85 }
       ],

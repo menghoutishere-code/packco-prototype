@@ -3,7 +3,7 @@ import { Sparkles, Check, RefreshCw, Download, Image as ImageIcon } from 'lucide
 
 export default function LogoStudio({ productName, onApplyLogo }) {
   const [motif, setMotif] = useState('mango'); // 'mango', 'cashew', 'pepper', 'rice', 'leaf', 'beehive'
-  const [style, setStyle] = useState('seal'); // 'seal', 'stamp', 'hexagon', 'badge'
+  const [logoStyle, setLogoStyle] = useState('combination'); // wordmark, lettermark, icon, abstract, mascot, combination, emblem
   const [brandName, setBrandName] = useState(productName || 'Agri Khmer');
   const [estYear, setEstYear] = useState('2026');
   const [primaryColor, setPrimaryColor] = useState('#f59e0b'); // amber-500
@@ -67,8 +67,9 @@ export default function LogoStudio({ productName, onApplyLogo }) {
   // Generate SVG code dynamically
   const generateVectorSvg = () => {
     const motifSvg = getMotifSvg(motif, primaryColor);
-    
-    switch (style) {
+
+    // Offline fallback (used only if the AI call fails) — renders the seal emblem by default.
+    switch (logoStyle) {
       case 'stamp':
         return `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -173,7 +174,8 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           brandName,
           estYear,
           primaryColor,
-          secondaryColor
+          secondaryColor,
+          logoStyle
         })
       });
 
@@ -268,22 +270,25 @@ export default function LogoStudio({ productName, onApplyLogo }) {
           </div>
         </div>
 
-        {/* Quick presets (as fallback templates) */}
+        {/* Logo style — drives the AI generation toward a real logo type (not a fixed badge) */}
         <div className="flex flex-col gap-1.5 border-t border-white/5 pt-3">
-          <label className="text-xs font-bold text-slate-300">Baseline Frame Style (Preset Fallback)</label>
+          <label className="text-xs font-bold text-slate-300">Logo Style</label>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { id: 'seal', name: '⭕ Circular Seal' },
-              { id: 'stamp', name: '📇 Dotted Stamp' },
-              { id: 'hexagon', name: '🛑 Hexagon Emblem' },
-              { id: 'badge', name: '🛡️ Premium Shield' }
+              { id: 'combination', name: '🔗 Combination' },
+              { id: 'wordmark', name: '🔤 Wordmark' },
+              { id: 'lettermark', name: '🅰️ Lettermark' },
+              { id: 'icon', name: '🟠 Icon / Symbol' },
+              { id: 'abstract', name: '🌀 Abstract' },
+              { id: 'mascot', name: '🐭 Mascot' },
+              { id: 'emblem', name: '⭕ Emblem / Seal' }
             ].map(item => (
               <button
                 key={item.id}
-                onClick={() => { setStyle(item.id); setGeneratedSvg(null); setGeneratedImage(null); }}
+                onClick={() => { setLogoStyle(item.id); setGeneratedSvg(null); setGeneratedImage(null); }}
                 className={`py-1.5 px-2.5 rounded-lg text-[10px] font-semibold text-left border transition-all ${
-                  style === item.id && !generatedSvg && !generatedImage
-                    ? 'bg-amber-500/10 border-amber-500 text-white' 
+                  logoStyle === item.id
+                    ? 'bg-amber-500/10 border-amber-500 text-white'
                     : 'bg-navy/30 border-white/5 text-slate-400 hover:text-white'
                 }`}
               >

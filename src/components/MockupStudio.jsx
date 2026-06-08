@@ -17,28 +17,6 @@ const MOCKUP_DATA = [
     ]
   },
   {
-    id: 'pouch-isometric',
-    name: '🍊 Pouch - 3D Angle (Studio)',
-    packageType: 'pouch',
-    imgUrl: '/mockup/pouch-isometric-blank.jpg',
-    width: 1408,
-    height: 768,
-    quads: [
-      [{x: 460, y: 370}, {x: 690, y: 190}, {x: 810, y: 320}, {x: 580, y: 500}]
-    ]
-  },
-  {
-    id: 'pouch-lifestyle',
-    name: '🍊 Pouch - Table (Lifestyle)',
-    packageType: 'pouch',
-    imgUrl: '/mockup/pouch-lifestyle-blank.jpg',
-    width: 1408,
-    height: 768,
-    quads: [
-      [{x: 530, y: 290}, {x: 760, y: 290}, {x: 760, y: 430}, {x: 530, y: 430}]
-    ]
-  },
-  {
     id: 'jar-front',
     name: '🫙 Glass Jar - Front (Studio)',
     packageType: 'jar',
@@ -102,6 +80,50 @@ const MOCKUP_DATA = [
     height: 768,
     quads: [
       [{x: 420, y: 265}, {x: 880, y: 265}, {x: 850, y: 635}, {x: 450, y: 635}]
+    ]
+  },
+  {
+    id: 'vacuum-front',
+    name: '🥩 Vacuum Pack - Front (Studio)',
+    packageType: 'vacuum',
+    imgUrl: '/mockup/vacuum-front-blank.jpg',
+    width: 1408,
+    height: 768,
+    quads: [
+      [{x: 500, y: 250}, {x: 800, y: 250}, {x: 790, y: 560}, {x: 510, y: 560}]
+    ]
+  },
+  {
+    id: 'flatbag-front',
+    name: '🍜 Flat-Bottom Bag - Front (Studio)',
+    packageType: 'flatbag',
+    imgUrl: '/mockup/flatbag-front-blank.jpg',
+    width: 1408,
+    height: 768,
+    quads: [
+      [{x: 540, y: 240}, {x: 770, y: 240}, {x: 765, y: 600}, {x: 545, y: 600}]
+    ]
+  },
+  {
+    id: 'cleartub-front',
+    name: '🥔 Clear Snack Tub - Front (Studio)',
+    packageType: 'cleartub',
+    imgUrl: '/mockup/cleartub-front-blank.jpg',
+    width: 1408,
+    height: 768,
+    quads: [
+      [{x: 545, y: 250}, {x: 760, y: 250}, {x: 760, y: 560}, {x: 545, y: 560}]
+    ]
+  },
+  {
+    id: 'kraftcarton-front',
+    name: '🍬 Kraft Carton - Front (Studio)',
+    packageType: 'box',
+    imgUrl: '/mockup/kraftcarton-front-blank.jpg',
+    width: 1408,
+    height: 768,
+    quads: [
+      [{x: 530, y: 240}, {x: 780, y: 240}, {x: 780, y: 600}, {x: 530, y: 600}]
     ]
   }
 ];

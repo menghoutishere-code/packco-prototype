@@ -17,14 +17,16 @@ const OUT = path.join(ROOT, 'api', '_mockups.js');
 // files in public/mockup are intentionally excluded.
 const FILES = {
   'pouch-front-back': 'pouch-front-back-blank.jpg',
-  'pouch-isometric': 'pouch-isometric-blank.jpg',
-  'pouch-lifestyle': 'pouch-lifestyle-blank.jpg',
   'jar-front': 'jar-front-blank.jpg',
   'jar-lifestyle': 'jar-lifestyle-blank.jpg',
   'box-isometric': 'box-isometric-blank.jpg',
   'box-lifestyle': 'box-lifestyle-blank.jpg',
   'tube-front': 'tube-front-blank.jpg',
   'tub-front': 'tub-front-blank.jpg',
+  'vacuum-front': 'vacuum-front-blank.jpg',
+  'flatbag-front': 'flatbag-front-blank.jpg',
+  'cleartub-front': 'cleartub-front-blank.jpg',
+  'kraftcarton-front': 'kraftcarton-front-blank.jpg',
 };
 
 let totalKB = 0;

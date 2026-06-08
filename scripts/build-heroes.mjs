@@ -27,6 +27,9 @@ const HEROES = [
   { type: 'pouch', blank: 'pouch-lifestyle-blank.jpg' },
   { type: 'jar', blank: 'jar-lifestyle-blank.jpg' },
   { type: 'box', blank: 'box-lifestyle-blank.jpg' },
+  { type: 'vacuum', blank: 'vacuum-front-blank.jpg' },
+  { type: 'flatbag', blank: 'flatbag-front-blank.jpg' },
+  { type: 'cleartub', blank: 'cleartub-front-blank.jpg' },
 ];
 
 const PROMPT = `You are a professional product packaging photographer.
@@ -64,7 +67,11 @@ async function bake({ type, blank }) {
   return true;
 }
 
+// Optional: only (re)bake specific types, e.g. HERO_ONLY=vacuum,flatbag,cleartub
+const ONLY = (process.env.HERO_ONLY || '').split(',').map(s => s.trim()).filter(Boolean);
+const todo = ONLY.length ? HEROES.filter(h => ONLY.includes(h.type)) : HEROES;
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
 console.log(`Baking heroes with ${MODEL} -> ${OUT_DIR}`);
-for (const h of HEROES) await bake(h);
+for (const h of todo) await bake(h);
 console.log('Done.');

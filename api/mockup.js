@@ -7,10 +7,6 @@ const MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image';
 // packs (e.g. it only labelled one of two pouches). Each entry tells Nano Banana exactly
 // which surface(s) to print on and how the artwork should foreshorten.
 const GEOMETRY = {
-  'pouch-lifestyle':
-    'Apply the artwork to the flat front face of the single stand-up pouch, filling the panel above the clear product window. Follow the gentle bowing and soft wrinkles of the pouch surface.',
-  'pouch-isometric':
-    'The pouch is shown at a three-quarter (isometric) angle. Apply the artwork onto the angled FRONT face only, with correct perspective so it recedes naturally toward the back; do NOT paint the side gusset with the front artwork.',
   'pouch-front-back':
     'There are TWO pouches. The LEFT pouch is the FRONT — apply the full front-of-pack artwork to it. The RIGHT pouch is the BACK of the SAME product — give it a matching brand-coloured back panel: a small repeat of the logo at top and a clean light area where nutrition/ingredients would print. Keep both pouches consistent in brand colour and lighting.',
   'jar-front':
@@ -25,6 +21,14 @@ const GEOMETRY = {
     'Wrap the artwork around the cylindrical canister/tube as a front-facing wraparound label. It must curve with the cylinder, foreshortening at the left and right edges.',
   'tub-front':
     'Apply the artwork onto the curved front wall of the tub, following its outward taper and curvature so it conforms to the rounded body.',
+  'vacuum-front':
+    'Apply the artwork to the flat front face of the vacuum-sealed flat pack, filling the central panel. Follow the tight vacuum-pressed wrinkles and the heat-sealed border so the print conforms to the puckered film.',
+  'flatbag-front':
+    'Apply the artwork to the flat front panel of the flat-bottom stand-up bag, centred, following the gentle bowing of the filled bag and its crisp side gussets.',
+  'cleartub-front':
+    'Wrap the artwork around the clear cylindrical snack tub as a front wraparound label centred on the body below the lid, curving with the cylinder so the left and right edges foreshorten.',
+  'kraftcarton-front':
+    'Apply the artwork FLAT onto the front face of the kraft folding carton, matching its squared edges and matte kraft texture. Front face only; do not bleed onto the top or side faces.',
 };
 
 const DEFAULT_GEOMETRY =
@@ -68,7 +72,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing designPng' });
   }
 
-  const blank = MOCKUPS[mockupId] || MOCKUPS['pouch-lifestyle'];
+  const blank = MOCKUPS[mockupId] || MOCKUPS['pouch-front-back'];
   const prompt = buildPrompt(mockupId, userPrompt);
 
   try {

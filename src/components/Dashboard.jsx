@@ -9,6 +9,9 @@ import LabelTemplateVibrant from './labels/LabelTemplateVibrant';
 import LogoStudio from './LogoStudio';
 import MockupStudio from './MockupStudio';
 
+// True if the string contains any Khmer-script characters.
+const hasKhmer = (s) => /[ក-៿]/.test(s || '');
+
 export default function Dashboard({ onLogout }) {
   const [productName, setProductName] = useState('Dried Spicy Mango');
   const [rawIngredients, setRawIngredients] = useState('Ripe Mango 85%, Sugar 12%, Chili 3%');
@@ -166,6 +169,7 @@ export default function Dashboard({ onLogout }) {
 
         setLabelData({
           productNameKh: inputLanguage === 'km' ? productName : translateMockName(productName),
+          productNameEn: inputLanguage === 'en' ? productName : '',
           ingredients: parsedIngs,
           nutritionFacts: {
             servingSize: weight,
@@ -232,10 +236,17 @@ export default function Dashboard({ onLogout }) {
     window.print();
   };
 
+  // Latin/English subtitle for the label — must never duplicate the Khmer title.
+  // EN mode → the typed (Latin) name; KH mode → the AI's English name if present, else nothing.
+  const subtitleName =
+    productName && !hasKhmer(productName) && productName !== labelData.productNameKh
+      ? productName
+      : (labelData.productNameEn && !hasKhmer(labelData.productNameEn) ? labelData.productNameEn : '');
+
   const renderSelectedTemplate = () => {
     const props = {
       labelData,
-      productName,
+      productName: subtitleName,
       weight,
       expiry,
       customLogoSvg,
@@ -616,10 +627,10 @@ export default function Dashboard({ onLogout }) {
         )}
 
         {activeTab === 'mockup' && (
-          <MockupStudio 
-            labelData={labelData} 
-            productName={productName} 
-            weight={weight} 
+          <MockupStudio
+            labelData={labelData}
+            productName={subtitleName}
+            weight={weight}
             expiry={expiry} 
             barcodeText={barcodeText} 
             activeTemplate={activeTemplate} 
