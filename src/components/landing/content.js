@@ -54,7 +54,7 @@ export const NATION_IMPACT = [
 ];
 
 export const TEAM = [
-  { name: 'Johan', role: 'Product & AI — builds the compliance + design engine and the live demo.' },
+  { name: 'Hout', role: 'Product & AI — builds the compliance + design engine and the live demo.' },
   { name: 'Vanna', role: 'Business model & market — unit economics, competition, go-to-market.' },
   { name: 'Votey', role: 'Product vision & roadmap — sustainability and the path to scale.' },
 ];
