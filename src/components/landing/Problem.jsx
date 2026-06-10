@@ -18,6 +18,16 @@ export default function Problem() {
               <div className="w-11 h-11 rounded-xl bg-amber/10 text-amber-light flex items-center justify-center"><w.icon size={22} /></div>
               <h3 className="font-outfit text-lg font-bold text-white">{w.title}</h3>
               <p className="text-sm text-slate-light/70 leading-relaxed">{w.text}</p>
+              {w.source && (
+                <a
+                  href={w.source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-amber-light/80 hover:text-amber-light transition-colors"
+                >
+                  {w.source.label} ↗
+                </a>
+              )}
             </Reveal>
           ))}
         </div>

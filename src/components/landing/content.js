@@ -20,7 +20,12 @@ export const WALLS = [
   { icon: DollarSign, title: 'Cost', text: 'Professional printed packaging is priced for big brands — micro-makers can’t justify it.' },
   { icon: Boxes, title: 'MOQ', text: 'Real printing needs 10,000-unit runs to amortize the plates. A home maker sells 100–500.' },
   { icon: PenTool, title: 'No design', text: 'No designer, no brand identity — just a clear bag and a self-printed sticker that peels.' },
-  { icon: Scale, title: 'Legal compliance', text: 'Khmer labels are mandatory by law (Sub-Decree 112); shops reject non-compliant products.' },
+  {
+    icon: Scale,
+    title: 'Legal compliance',
+    text: 'Khmer-language labels are mandatory under Cambodia’s Law on Food Safety (2022) & Standard CS 001-2000; shops reject non-compliant products.',
+    source: { label: 'Standard CS 001-2000', url: 'https://www.wipo.int/wipolex/en/legislation/details/6403' },
+  },
 ];
 
 export const PRODUCTS = [
@@ -29,7 +34,7 @@ export const PRODUCTS = [
 ];
 
 export const PIPELINE = [
-  { icon: ShieldCheck, step: '01', title: 'Compliant Khmer label', text: 'AI builds a Sub-Decree 112 label — ingredients, nutrition, warnings — in seconds.' },
+  { icon: ShieldCheck, step: '01', title: 'Compliant Khmer label', text: 'AI builds a legally compliant Khmer label — ingredients, nutrition, warnings — in seconds.' },
   { icon: Sparkles, step: '02', title: 'Brand logo', text: 'A clean, original brand mark generated to match the product.' },
   { icon: Box, step: '03', title: '3D product mockup', text: 'The design rendered onto their real package — shelf- and Facebook-ready.' },
 ];

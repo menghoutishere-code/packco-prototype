@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   }
 
   const systemInstruction = `
-    You are a Cambodian food labeling compliance officer specializing in Ministry of Commerce Sub-Decree 112 on product labeling and Prakas No. 0059 on nutrition labeling.
+    You are a Cambodian food labeling compliance officer specializing in prepackaged-food labeling under Cambodia's Law on Food Safety (2022) and Cambodian Standard CS 001-2000 on the labeling of prepackaged food products.
     
     The user's input language is: "${inputLanguage || 'en'}".
     
