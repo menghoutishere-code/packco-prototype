@@ -494,9 +494,9 @@ export default function Dashboard({ onLogout }) {
                 className="mt-1 rounded bg-navy border-white/10 text-amber-500 focus:ring-amber-500 cursor-pointer"
               />
               <label htmlFor="liability-checkbox" className="text-[10px] text-slate-400 leading-snug cursor-pointer select-none">
-                {inputLanguage === 'km' 
-                  ? 'ខ្ញុំបញ្ជាក់ថា គ្រឿងផ្សំ និងទម្ងន់គឺត្រឹមត្រូវ។ ទំនួលខុសត្រូវចុងក្រោយសម្រាប់ការអនុលោមតាមសេចក្តីសម្រេច ១១២ គឺស្ថិតនៅលើសហគ្រាសផលិត។'
-                  : 'I verify that ingredients, allergens, and weights are correct. Final compliance sign-off under Sub-Decree 112 rests with the producer.'
+                {inputLanguage === 'km'
+                  ? 'ខ្ញុំបញ្ជាក់ថា គ្រឿងផ្សំ និងទម្ងន់គឺត្រឹមត្រូវ។ ទំនួលខុសត្រូវចុងក្រោយសម្រាប់ការអនុលោមតាមច្បាប់ស្តីពីសុវត្ថិភាពចំណីអាហារ គឺស្ថិតនៅលើសហគ្រាសផលិត។'
+                  : 'I verify that ingredients, allergens, and weights are correct. Final compliance sign-off under Cambodian food-safety law rests with the producer.'
                 }
               </label>
             </div>
