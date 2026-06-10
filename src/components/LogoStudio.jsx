@@ -64,67 +64,78 @@ export default function LogoStudio({ productName, onApplyLogo }) {
     }
   };
 
-  // Generate SVG code dynamically
+  // Modern logo placeholders — one fitting mark per style (offline fallback / pre-generation preview)
   const generateVectorSvg = () => {
-    const motifSvg = getMotifSvg(motif, primaryColor);
+    const motifSvg = renderSvgStringToHtml(getMotifSvg(motif, primaryColor));
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const name = esc((brandName || 'Brand').trim());
+    const len = Math.max((brandName || 'Brand').trim().length, 1);
+    const initials = esc((brandName || 'Brand').trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 3).toUpperCase() || 'P');
+    const wordSize = Math.max(8, Math.min(13, 150 / len));
 
-    // Offline fallback (used only if the AI call fails) — renders the seal emblem by default.
     switch (logoStyle) {
-      case 'stamp':
+      case 'wordmark':
         return `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="10" width="80" height="80" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-dasharray="3,3" rx="4" />
-            <rect x="14" y="14" width="72" height="72" fill="none" stroke="${primaryColor}" stroke-width="1.5" rx="2" />
-            <g transform="translate(0, -5)">
-              ${renderSvgStringToHtml(motifSvg)}
-            </g>
-            <text x="50" y="72" font-family="'Outfit', sans-serif" font-size="7" font-weight="800" fill="${primaryColor}" text-anchor="middle" letter-spacing="1.5">${brandName.toUpperCase()}</text>
-            <text x="50" y="80" font-family="'Inter', sans-serif" font-size="4.5" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">ESTD ${estYear}</text>
-          </svg>
-        `;
-      case 'hexagon':
+            <text x="50" y="49" font-family="'Outfit', sans-serif" font-size="${Math.max(7, Math.min(16, 165 / len))}" font-weight="900" fill="${secondaryColor}" text-anchor="middle" letter-spacing="-0.5">${name}</text>
+            <path d="M24 58 Q50 68 76 58" fill="none" stroke="${primaryColor}" stroke-width="3" stroke-linecap="round" />
+            <text x="50" y="71" font-family="'Inter', sans-serif" font-size="4" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3" opacity="0.6">EST. ${esc(estYear)}</text>
+          </svg>`;
+      case 'lettermark':
         return `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="50,10 85,30 85,70 50,90 15,70 15,30" fill="none" stroke="${primaryColor}" stroke-width="3.5" />
-            <polygon points="50,14 81,32 81,68 50,86 19,68 19,32" fill="none" stroke="${secondaryColor}" stroke-width="1" opacity="0.4" />
-            <g transform="translate(0, -6)">
-              ${renderSvgStringToHtml(motifSvg)}
-            </g>
-            <rect x="25" y="66" width="50" height="10" fill="${primaryColor}" rx="1" />
-            <text x="50" y="73.5" font-family="'Outfit', sans-serif" font-size="6" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="1.2">${brandName.toUpperCase()}</text>
-            <text x="50" y="82" font-family="'Inter', sans-serif" font-size="4" font-weight="500" fill="${secondaryColor}" text-anchor="middle">TRADITIONAL QUALITY</text>
-          </svg>
-        `;
-      case 'badge':
+            <rect x="28" y="20" width="44" height="44" rx="12" fill="${primaryColor}" />
+            <text x="50" y="51" font-family="'Outfit', sans-serif" font-size="22" font-weight="900" fill="#ffffff" text-anchor="middle">${initials}</text>
+            <text x="50" y="80" font-family="'Outfit', sans-serif" font-size="${Math.max(5, Math.min(8, 120 / len))}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">${esc((brandName || 'Brand').toUpperCase())}</text>
+          </svg>`;
+      case 'icon':
         return `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 12 C 70 12, 85 20, 85 40 C 85 68, 50 88, 50 88 C 50 88, 15 68, 15 40 C 15 20, 30 12, 50 12 Z" fill="none" stroke="${primaryColor}" stroke-width="3" />
-            <g transform="translate(0, -6)">
-              ${renderSvgStringToHtml(motifSvg)}
-            </g>
-            <path d="M 22 64 L 78 64 L 70 72 L 30 72 Z" fill="${secondaryColor}" />
-            <text x="50" y="60.5" font-family="'Outfit', sans-serif" font-size="5.5" font-weight="800" fill="${primaryColor}" text-anchor="middle" letter-spacing="1">${brandName.toUpperCase()}</text>
-            <text x="50" y="70" font-family="'Inter', sans-serif" font-size="3.5" font-weight="700" fill="#ffffff" text-anchor="middle">PREMIUM BRAND</text>
-            <text x="50" y="80" font-family="'Inter', sans-serif" font-size="4" font-weight="600" fill="${primaryColor}" text-anchor="middle">SINCE ${estYear}</text>
-          </svg>
-        `;
-      case 'seal':
-      default:
+            <circle cx="50" cy="50" r="40" fill="${primaryColor}" opacity="0.08" />
+            <g transform="translate(50 50) scale(1.05) translate(-50 -50)">${motifSvg}</g>
+          </svg>`;
+      case 'abstract':
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="43" cy="39" r="17" fill="${primaryColor}" opacity="0.85" />
+            <circle cx="57" cy="39" r="17" fill="${secondaryColor}" opacity="0.8" />
+            <circle cx="50" cy="52" r="17" fill="${primaryColor}" opacity="0.55" />
+            <text x="50" y="86" font-family="'Outfit', sans-serif" font-size="${wordSize}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="-0.3">${name}</text>
+          </svg>`;
+      case 'mascot':
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 19c-3-2-8-3-8-3s1 4 3 6c-7 2-13 9-13 18 0 12 11 22 18 22s18-10 18-22c0-10-8-18-18-21z" fill="${primaryColor}" />
+            <path d="M50 16c0-3 3-6 6-7 0 0-1 4-3 6-1 1-2 1-3 1z" fill="#15803d" />
+            <circle cx="44" cy="41" r="2.6" fill="${secondaryColor}" />
+            <circle cx="56" cy="41" r="2.6" fill="${secondaryColor}" />
+            <path d="M44 48 Q50 54 56 48" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-linecap="round" />
+            <circle cx="39" cy="46" r="2.2" fill="#ffffff" opacity="0.35" />
+            <circle cx="61" cy="46" r="2.2" fill="#ffffff" opacity="0.35" />
+            <text x="50" y="87" font-family="'Outfit', sans-serif" font-size="${wordSize}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="-0.3">${name}</text>
+          </svg>`;
+      case 'emblem':
         return `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="42" fill="none" stroke="${primaryColor}" stroke-width="3" />
             <circle cx="50" cy="50" r="38" fill="none" stroke="${secondaryColor}" stroke-width="0.75" stroke-dasharray="2,2" />
-            <g transform="translate(0, 0)">
-              ${renderSvgStringToHtml(motifSvg)}
-            </g>
+            <g transform="translate(0 -2)">${motifSvg}</g>
             <path id="curve" d="M 22 50 A 28 28 0 1 1 78 50" fill="none" />
             <text font-family="'Outfit', sans-serif" font-size="6" font-weight="800" fill="${primaryColor}" letter-spacing="1">
-              <textPath href="#curve" startOffset="50%" text-anchor="middle">${brandName.toUpperCase()}</textPath>
+              <textPath href="#curve" startOffset="50%" text-anchor="middle">${esc((brandName || 'Brand').toUpperCase())}</textPath>
             </text>
-            <text x="50" y="76" font-family="'Inter', sans-serif" font-size="4.5" font-weight="700" fill="${secondaryColor}" text-anchor="middle">EST. ${estYear}</text>
+            <text x="50" y="76" font-family="'Inter', sans-serif" font-size="4.5" font-weight="700" fill="${secondaryColor}" text-anchor="middle">EST. ${esc(estYear)}</text>
             <text x="50" y="82" font-family="'Inter', sans-serif" font-size="3.5" font-weight="600" fill="${primaryColor}" text-anchor="middle" letter-spacing="0.5">CAMBODIA</text>
-          </svg>
-        `;
+          </svg>`;
+      case 'combination':
+      default:
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(50 29) scale(0.58) translate(-50 -50)">${motifSvg}</g>
+            <text x="50" y="66" font-family="'Outfit', sans-serif" font-size="${wordSize}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="-0.3">${name}</text>
+            <path d="M28 72 Q50 80 72 72" fill="none" stroke="${primaryColor}" stroke-width="2.5" stroke-linecap="round" />
+            <text x="50" y="84" font-family="'Inter', sans-serif" font-size="3.8" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2" opacity="0.6">EST. ${esc(estYear)} · CAMBODIA</text>
+          </svg>`;
     }
   };
 
