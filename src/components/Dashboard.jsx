@@ -536,21 +536,25 @@ export default function Dashboard({ onLogout }) {
             
             {isEconomicsOpen && (
               <div className="p-5 border-t border-white/5 flex flex-col gap-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">PackCo Aggregated Cost:</span>
-                  <span className="font-bold text-green-400">$0.16 / unit</span>
+                <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
+                  <span className="text-slate-400">One-time AI Design:</span>
+                  <span className="font-bold text-amber-500">$5 / design</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">Maker Retail Price (100 MOQ):</span>
-                  <span className="font-bold text-white">$0.25 / unit</span>
+                  <span className="text-slate-400">PackCo Cost:</span>
+                  <span className="font-bold text-green-400">$0.09 / unit</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Maker Price (100 MOQ):</span>
+                  <span className="font-bold text-white">$0.20 / unit</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
                   <span className="text-slate-400">Local Delivery (Flat Grab Rate):</span>
                   <span className="font-bold text-slate-300">$1.50 / order</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">PackCo Platform Margin:</span>
-                  <span className="font-bold text-amber-500">36% ($0.09)</span>
+                  <span className="text-slate-400">Margin / unit:</span>
+                  <span className="font-bold text-amber-500">$0.11</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-400">Scheduled Printing Drop:</span>
